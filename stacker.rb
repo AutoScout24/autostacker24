@@ -3,7 +3,7 @@
 require 'aws-sdk'
 
 # Overridable parameters
-SERVICE_VERSION = ENV['SERVICE_VERSION'] || ENV['GO_PIPELINE_LABEL']
+SERVICE_VERSION = ENV['SERVICE_VERSION'] || ENV['GO_PIPELINE_LABEL'] || '334'
 SERVICE_SANDBOX = ENV['SERVICE_SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip)
 GLOBAL_VERSION  = ENV['GLOBAL_VERSION']
 GLOBAL_SANDBOX  = ENV['GLOBAL_SANDBOX']
@@ -32,8 +32,8 @@ module ServiceStack
   end
 
   def self.create_or_update(template, parameters)
-    GlobalStack.outputs.each do |o|
-      parameters[o.output_key] = o.output_value
+    GlobalStack.outputs.each do |key, value|
+      parameters[key] = value
     end
     parameters[:ServiceVersion] = version
     Stacker.create_or_update_stack(stack_name, template, parameters)
@@ -64,22 +64,26 @@ module GlobalStack
   end
 
   def self.version
-    @version ||= GLOBAL_VERSION || 21
+    @version ||= GLOBAL_VERSION || 3
     # TODO: find current version from prod. maybe a tag in s3 must be updated, or you have to search in s3
   end
 
   def self.outputs
     @lazy_outputs ||= Stacker.find_stack(stack_name).outputs.inject({}) do |m, o|
-      m[o.output_key.to_sym] = o.output_value
+      m.merge(o.output_key.to_sym => o.output_value)
     end
   end
 
-  def self.create # stack_name, version
-    Stacker.create_stack(stack_name, template, {Sandbox: stack_name})
+  def self.create
+    Stacker.create_stack(stack_name, template, {})
   end
 
   def self.update
-    Stacker.update_stack(stack_name, template, {Sandbox: stack_name})
+    Stacker.update_stack(stack_name, template, {})
+  end
+
+  def self.create_or_update
+    Stacker.create_or_update_stack(stack_name, template, {})
   end
 
   def self.delete
@@ -89,7 +93,7 @@ module GlobalStack
   def self.template
     # TODO: How to get the current version used on live?
     s3 = Aws::S3::Client.new
-    s3.get_object(bucket: 'as24.tatsu.artefacts', key: "scaffolding/#{version}/infra-vpc.json").body.read
+    s3.get_object(bucket: 'as24.tatsu.artefacts', key: "global-stack-template/#{version}/infra-vpc.json").body.read
   end
 end
 
@@ -129,18 +133,23 @@ module Stacker
     wait_for_stack(stack_name, :delete)
   end
 
-  def self.wait_for_stack(stack_name, operation, timeout_in_minutes: 15)
+  def self.wait_for_stack(stack_name, operation, timeout_in_minutes = 15)
     stop_time = Time.now + timeout_in_minutes * 60
+    finished = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED)$/
     while Time.now < stop_time
       stack = find_stack(stack_name)
-      return nil if stack.nil? # could happen if stack operation was delete
-      puts "waiting for stack #{stack_name}, current status #{stack.stack_status}"
-      #TODO match expected operation
-      return stack if  stack.stack_status =~ /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE)$/
-      fail "wait for stack failed #{stack.stack_status}" if stack.stack_status =~ /(ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED)$/i
+      status = stack ? stack.stack_status : 'DELETE_COMPLETE'
+      puts "waiting for stack #{stack_name}, current status #{status}"
+      expected_status = case operation
+                          when :create then /CREATE_COMPLETE/
+                          when :update then /CREATE_COMPLETE|UPDATE_COMPLETE/
+                          when :delete then /DELETE_COMPLETE/
+                        end
+      return true if status =~ expected_status
+      fail "waiting for stack #{stack_name} failed, current status #{status}" if status =~ finished
       sleep(5)
     end
-    fail "wait_for_stack timeout after #{timeout_in_minutes} minutes"
+    fail "waiting for stack timeout after #{timeout_in_minutes} minutes"
   end
 
   def self.find_stack(stack_name)
@@ -161,5 +170,7 @@ module Stacker
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing
-
+  puts "Started"
+  puts GlobalStack.outputs
+  puts "Done"
 end
