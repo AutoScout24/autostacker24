@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'rubygems'
-require 'stacker/cli/stack'
-
-Stacker::Stack.start
