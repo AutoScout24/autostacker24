@@ -71,16 +71,28 @@ module Stacker
     transform_outputs(stack.outputs, hash)
   end
 
-  def self.transform_outputs(outputs, hash = {})
-    outputs.inject(hash) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
+  def self.transform_outputs(outputs, existing_outputs = {})
+    outputs.inject(existing_outputs) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
   end
 
-  def self.transform_parameters(hash)
-    hash.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
+  def self.transform_parameters(parameters)
+    parameters.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
   end
 
   def self.sandboxed_stack_name(sandbox, stack_name)
     (sandbox ? "#{sandbox}-" : '') + stack_name
+  end
+
+  def self.get_stack_resources(stack_name, logical_resource_id)
+    cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources.select{|p| p.logical_resource_id == logical_resource_id}.first
+
+    # maybe we want to return something like a mop from logical_resource_id -> resource, if more than one resource is interesting
+    # resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
+    # resources.inject({}){|map, resource| map.merge(resource.logical_resource_id => resource)}
+
+  rescue Aws::CloudFormation::Errors::ValidationError => error
+    raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
+    nil
   end
 
   def self.cloud_formation # lazy CloudFormation client
@@ -90,7 +102,5 @@ module Stacker
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing
-  puts "Started"
-  puts GlobalStack.outputs
-  puts "Done"
+
 end
