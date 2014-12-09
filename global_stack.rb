@@ -3,14 +3,13 @@ require_relative 'stacker.rb'
 
 class GlobalStack
 
-  def initialize(name, options = {})
-    @name = name
+  def initialize(options = {})
     @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL'] || 3
     @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
     @stack_name = Stacker.sandboxed_stack_name(@sandbox, 'global')
   end
 
-  attr_reader :name, :sandbox, :version, :stack_name
+  attr_reader :sandbox, :version, :stack_name
 
   def outputs
     @lazy_outputs ||= Stacker.get_stack_outputs(stack_name)
