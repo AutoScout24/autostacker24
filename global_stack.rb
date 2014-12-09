@@ -1,50 +1,38 @@
 
-require_relative 'Stacker.rb'
+require_relative 'stacker.rb'
 
-module GlobalStack
+class GlobalStack
 
-  class << self
-    attr_accessor :sandbox, :version
+  def initialize(name, options = {})
+    @name = name
+    @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL'] || 3
+    @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
+    @stack_name = Stacker.sandboxed_stack_name(@sandbox, 'global')
   end
 
-  def self.stack_name
-    (sandbox ? "#{sandbox}-" : '') + name
-  end
+  attr_reader :name, :sandbox, :version, :stack_name
 
-  def self.name
-    'global'
-  end
-
-  def self.sandbox
-    @sandbox ||= GLOBAL_SANDBOX
-  end
-
-  def self.version
-    @version ||= GLOBAL_VERSION || 3
-    # TODO: find current version from prod. maybe a tag in s3 must be updated, or you have to search in s3
-  end
-
-  def self.outputs
+  def outputs
     @lazy_outputs ||= Stacker.get_stack_outputs(stack_name)
   end
 
-  def self.create
+  def create
     Stacker.create_stack(stack_name, template, {})
   end
 
-  def self.update
+  def update
     Stacker.update_stack(stack_name, template, {})
   end
 
-  def self.create_or_update
+  def create_or_update
     Stacker.create_or_update_stack(stack_name, template, {})
   end
 
-  def self.delete
+  def delete
      Stacker.delete_stack(stack_name)
   end
 
-  def self.template
+  def template
     # TODO: How to get the current version used on live?
     s3 = Aws::S3::Client.new
     s3.get_object(bucket: 'as24.tatsu.artefacts', key: "global-stack-template/#{version}/infra-vpc.json").body.read

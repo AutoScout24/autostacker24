@@ -1,13 +1,4 @@
-#fail 'need Ruby2.0 or newer' unless RUBY_VERSION.split[0].to_i >= 2
-
 require 'aws-sdk'
-
-# Overridable parameters
-SERVICE_VERSION = ENV['SERVICE_VERSION'] || ENV['GO_PIPELINE_LABEL']
-SERVICE_SANDBOX = ENV['SERVICE_SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip)
-GLOBAL_VERSION  = ENV['GLOBAL_VERSION']
-GLOBAL_SANDBOX  = ENV['GLOBAL_SANDBOX']
-
 
 module Stacker
 
@@ -36,8 +27,11 @@ module Stacker
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
+      puts "stack #{stack_name} is already up to date"
+      find_stack(stack_name)
+    else
+      wait_for_stack(stack_name, :update)
     end
-    wait_for_stack(stack_name, :update)
   end
 
   def self.delete_stack(stack_name)
@@ -53,9 +47,9 @@ module Stacker
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
       puts "waiting for stack #{stack_name}, current status #{status}"
       expected_status = case operation
-                          when :create then /CREATE_COMPLETE/
-                          when :update then /CREATE_COMPLETE|UPDATE_COMPLETE/
-                          when :delete then /DELETE_COMPLETE/
+                          when :create then /CREATE_COMPLETE$/
+                          when :update then /UPDATE_COMPLETE$/
+                          when :delete then /DELETE_COMPLETE$/
                         end
       return true if status =~ expected_status
       fail "waiting for stack #{stack_name} failed, current status #{status}" if status =~ finished
@@ -72,7 +66,9 @@ module Stacker
   end
 
   def self.get_stack_outputs(stack_name, hash = {})
-    transform_outputs(find_stack(stack_name).outputs, hash)
+    stack = find_stack(stack_name)
+    fail "stack #{stack_name} not found" unless stack
+    transform_outputs(stack.outputs, hash)
   end
 
   def self.transform_outputs(outputs, hash = {})
@@ -81,6 +77,10 @@ module Stacker
 
   def self.transform_parameters(hash)
     hash.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
+  end
+
+  def self.sandboxed_stack_name(sandbox, stack_name)
+    (sandbox ? "#{sandbox}-" : '') + stack_name
   end
 
   def self.cloud_formation # lazy CloudFormation client

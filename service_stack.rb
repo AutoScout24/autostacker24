@@ -1,46 +1,36 @@
 
-require_relative 'Stacker.rb'
+require_relative 'stacker.rb'
 
-module ServiceStack
+class ServiceStack
 
-  # include GenericStack ???
-
-  class << self
-    attr_writer :name, :sandbox, :version
+  def initialize(name, options = {})
+    @name = name
+    @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL']
+    @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
+    @global_stack_name  = options[:global_stack_name] || ENV['GLOBAL_STACK_NAME'] || 'global'
+    @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
   end
 
-  def self.stack_name
-    fail 'name not set' if name.nil? || name.empty?
-    (sandbox ? "#{sandbox}-" : '') + name
-  end
+  attr_reader :name, :sandbox, :version, :stack_name, :global_stack_name
 
-  def self.name
-    @name ||= SERVICE_NAME
-  end
+  def create_or_update(template, parameters)
+    fail " version does not exist" if version.nil?
+    # TODO: verify that version exists
 
-  def self.sandbox
-    @sandbox ||= SERVICE_SANDBOX
-  end
-
-  def self.version
-    @version ||= SERVICE_VERSION
-  end
-
-  def self.global_stack_name
-    @global_stack ||= 'global'
-  end
-
-  def self.create_or_update(template, parameters)
-    Stacker.get_stack_outputs(global_stack_name, parameters)
-    parameters[:ServiceVersion] = version
+    parameters.merge!(global_outputs)
+    parameters[:Version] = version
     Stacker.create_or_update_stack(stack_name, template, parameters)
   end
 
-  def self.delete
+  def delete
     Stacker.delete_stack(stack_name)
   end
 
-  def self.outputs
+  def outputs
     @lazy_outputs ||= Stacker.get_stack_outputs(stack_name)
+  end
+
+  def global_outputs
+    @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
   end
 end
