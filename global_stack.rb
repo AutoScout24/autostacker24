@@ -1,4 +1,3 @@
-
 require_relative 'stacker.rb'
 
 class GlobalStack
@@ -65,4 +64,8 @@ class GlobalStack
     @lazy_s3 ||= Aws::S3::Client.new
   end
 
+end
+
+if $0 ==__FILE__ # placeholder for interactive testing
+  gstack = GlobalStack.new
 end
