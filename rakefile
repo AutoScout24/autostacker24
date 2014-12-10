@@ -1,10 +1,40 @@
 require 'bundler'
 require 'bundler/gem_tasks'
 require 'rake/clean'
-
+require 'aws-sdk'
 CLEAN.include('pkg/**/*')
 
 Bundler::GemHelper.install_tasks
 
 task :default => [:build]
 
+desc "push the gem to S3"
+task :publish do
+  aws_region = ENV['AWS_DEFAULT_REGION'] || 'eu-west-1'
+  puts "Uploading #{File.basename(gem_file_path)}"
+  s3 = Aws::S3::Client.new(:region => aws_region)
+  s3.put_object(
+    bucket: 'as24.tatsu.artefacts', 
+    key: "gems/#{gem_name}/#{File.basename(gem_file_path)}",
+    body: IO.read(gem_file_path)
+  )
+end
+
+def gem_file_path
+  Bundler::GemHelper.instance.gem_file_path
+end
+
+def gem_name
+  Bundler::GemHelper.instance.gem_name
+end
+
+module Bundler
+  class GemHelper
+    def gem_file_path
+      Dir[File.join(File.dirname(__FILE__), 'pkg', "#{name}-*.gem")].sort_by{|f| File.mtime(f)}.last
+    end
+    def gem_name
+      name
+    end
+  end
+end
