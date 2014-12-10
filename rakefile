@@ -15,7 +15,7 @@ task :publish do
   s3 = Aws::S3::Client.new(:region => aws_region)
   s3.put_object(
     bucket: 'as24.tatsu.artefacts', 
-    key: "gems/#{gem_name}/#{File.basename(gem_file_path)}",
+    key: "gem_repo/gems/#{File.basename(gem_file_path)}",
     body: IO.read(gem_file_path)
   )
 end
