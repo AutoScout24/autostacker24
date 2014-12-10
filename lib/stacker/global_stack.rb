@@ -1,4 +1,5 @@
-require_relative 'stacker.rb'
+
+require 'stacker/stacker.rb'
 
 class GlobalStack
 

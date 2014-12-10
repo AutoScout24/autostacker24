@@ -1,0 +1,10 @@
+require 'bundler'
+require 'bundler/gem_tasks'
+require 'rake/clean'
+
+CLEAN.include('pkg/**/*')
+
+Bundler::GemHelper.install_tasks
+
+task :default => [:build]
+
