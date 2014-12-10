@@ -68,5 +68,5 @@ class GlobalStack
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing
-  gstack = GlobalStack.new
+
 end
