@@ -18,7 +18,7 @@ class GlobalStack
     #
 
     @version = options[:version] || ENV['GLOBAL_VERSION'] || ENV['GO_PIPELINE_LABEL'] || latest_version
-    @sandbox = options[:sandbox] || ENV['GLOBAL_SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
+    @sandbox = options[:sandbox] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
     @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
   end
 
@@ -38,7 +38,11 @@ class GlobalStack
   end
 
   def delete
-     Stacker.delete_stack(stack_name)
+     if @stack_name == @name
+       puts "I will not delete a non-sandboxed global stack"
+     else
+       Stacker.delete_stack(stack_name)
+     end
   end
 
   def template # if not set from the outside, fetch it from s3
