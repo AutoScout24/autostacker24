@@ -4,8 +4,10 @@ module Stacker
 
   def self.create_or_update_stack(stack_name, template_body, parameters)
     if find_stack(stack_name).nil?
+      puts "Creating new stack #{stack_name}"
       create_stack(stack_name, template_body, parameters)
     else
+      puts "Updating existing stack #{stack_name}"
       update_stack(stack_name, template_body, parameters)
     end
   end
@@ -16,6 +18,7 @@ module Stacker
                                  on_failure:    'DELETE',
                                  parameters:    transform_parameters(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
+    puts "Waiting for stack #{stack_name}"
     wait_for_stack(stack_name, :create)
   end
 
@@ -26,10 +29,12 @@ module Stacker
                                    parameters:    transform_parameters(parameters),
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
+      puts "Error #{error}"
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       puts "stack #{stack_name} is already up to date"
       find_stack(stack_name)
     else
+      puts "Waiting for stack #{stack_name}"
       wait_for_stack(stack_name, :update)
     end
   end
