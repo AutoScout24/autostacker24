@@ -65,7 +65,9 @@ module Stacker
   end
 
   def self.find_stack(stack_name)
-    cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    puts "find_stack"
+    stack = cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    puts "stack found: #{stack}"
   rescue Aws::CloudFormation::Errors::ValidationError => error
     puts "Error: #{error}"
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
