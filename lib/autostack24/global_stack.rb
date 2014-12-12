@@ -1,5 +1,5 @@
 
-require 'autostack24/stacker'
+require 'autostack24/stack'
 
 class GlobalStack
 
