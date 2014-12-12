@@ -1,6 +1,6 @@
 require 'aws-sdk'
 
-module Stacker
+module Stack
 
   def self.create_or_update_stack(stack_name, template_body, parameters)
     if find_stack(stack_name).nil?

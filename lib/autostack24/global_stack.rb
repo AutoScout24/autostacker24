@@ -1,5 +1,5 @@
 
-require 'stacker/stacker.rb'
+require 'autostack24/stacker'
 
 class GlobalStack
 
@@ -19,7 +19,7 @@ class GlobalStack
 
     @version = options[:version] || ENV['GLOBAL_VERSION'] || ENV['GO_PIPELINE_LABEL'] || latest_version
     @sandbox = options[:sandbox] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
-    @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
+    @stack_name = Stack.sandboxed_stack_name(@sandbox, @name)
   end
 
   attr_reader :name, :sandbox, :version, :stack_name
@@ -37,14 +37,14 @@ class GlobalStack
       end
     end
 
-    Stacker.create_or_update_stack(stack_name, template, parameters)
+    Stack.create_or_update_stack(stack_name, template, parameters)
   end
 
   def delete
      if @stack_name == @name
        puts "I will not delete a non-sandboxed global stack"
      else
-       Stacker.delete_stack(stack_name)
+       Stack.delete_stack(stack_name)
      end
   end
 
@@ -70,7 +70,7 @@ class GlobalStack
   end
 
   def outputs
-    @lazy_outputs ||= Stacker.get_stack_outputs(stack_name)
+    @lazy_outputs ||= Stack.get_stack_outputs(stack_name)
   end
 
   def s3
