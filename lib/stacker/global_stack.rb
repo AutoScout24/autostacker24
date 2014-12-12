@@ -66,7 +66,7 @@ class GlobalStack
   end
 
   def s3
-    @lazy_s3 ||= Aws::S3::Client.new
+    @lazy_s3 ||= Aws::S3::Client.new(:region => ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
   end
 
 end
