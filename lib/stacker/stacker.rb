@@ -3,12 +3,9 @@ require 'aws-sdk'
 module Stacker
 
   def self.create_or_update_stack(stack_name, template_body, parameters)
-    puts "create_or_update_stack #{stack_name}"
     if find_stack(stack_name).nil?
-      puts "Creating new stack #{stack_name}"
       create_stack(stack_name, template_body, parameters)
     else
-      puts "Updating existing stack #{stack_name}"
       update_stack(stack_name, template_body, parameters)
     end
   end
@@ -19,7 +16,6 @@ module Stacker
                                  on_failure:    'DELETE',
                                  parameters:    transform_parameters(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
-    puts "Waiting for stack #{stack_name}"
     wait_for_stack(stack_name, :create)
   end
 
@@ -30,12 +26,9 @@ module Stacker
                                    parameters:    transform_parameters(parameters),
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
-      puts "Error #{error}"
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
-      puts "stack #{stack_name} is already up to date"
       find_stack(stack_name)
     else
-      puts "Waiting for stack #{stack_name}"
       wait_for_stack(stack_name, :update)
     end
   end
@@ -51,7 +44,6 @@ module Stacker
     while Time.now < stop_time
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
-      puts "waiting for stack #{stack_name}, current status #{status}"
       expected_status = case operation
                           when :create then /CREATE_COMPLETE$/
                           when :update then /UPDATE_COMPLETE$/
@@ -65,17 +57,10 @@ module Stacker
   end
 
   def self.find_stack(stack_name)
-    puts "find_stack"
     stack = cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
-    puts "stack found: #{stack}"
   rescue Aws::CloudFormation::Errors::ValidationError => error
-    puts "Error: #{error}"
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
-    puts "Stack does not exist, apparently"
     nil
-  rescue Exception => e
-    puts "Error: #{e}"
-    raise e
   end
 
   def self.get_stack_outputs(stack_name, hash = {})

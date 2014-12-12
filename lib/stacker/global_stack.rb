@@ -26,15 +26,17 @@ class GlobalStack
   attr_writer :template
 
   def create_or_update(parameters = {})
-
     # if :bastion_ami not given fetch it from s3 "global-stack-template/#{version}/ami.txt"
     unless parameters.has_key?(:BastionAmi)
       s3_key = "global-stack-template/#{version}/ami.txt"
-      puts "Fetching BastionAmi from #{s3_key}"
-      parameters[:BastionAmi] = s3.get_object(bucket: 'as24.tatsu.artefacts', key: s3_key).body.read.strip
+      begin
+        parameters[:BastionAmi] = s3.get_object(bucket: 'as24.tatsu.artefacts', key: s3_key).body.read.strip
+      rescue Exception => e
+        $stderr.puts "Failure getting ami_id from s3://as24.tatsu.artefacts/#{s3_key}"
+        raise e
+      end
     end
 
-    puts "create_or_update_stack(#{stack_name}, template, #{parameters})"
     Stacker.create_or_update_stack(stack_name, template, parameters)
   end
 
@@ -49,11 +51,13 @@ class GlobalStack
   def template # if not set from the outside, fetch it from s3
     if @template.nil?
       s3_key = "global-stack-template/#{version}/global-stack.json"
-      puts "Fetching global stack template from #{s3_key}"
       s3.get_object(bucket: 'as24.tatsu.artefacts', key: s3_key).body.read
     else
       @template
     end
+  rescue Exception => e
+    $stderr.puts "Failure getting template from s3://as24.tatsu.artefacts/global-stack-template/#{version}/global-stack.json"
+    raise e
   end
 
   def latest_version(account_name = 'as24prod')
