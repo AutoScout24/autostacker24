@@ -93,6 +93,10 @@ module Stack
     nil
   end
 
+  def self.estimate_template_cost(template)
+    cloud_formation.estimate_template_cost(:template_body => template)
+  end
+
   def self.cloud_formation # lazy CloudFormation client
     @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(:region => ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
   end

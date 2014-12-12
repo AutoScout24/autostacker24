@@ -32,6 +32,10 @@ class ServiceStack
     "http://#{stack_name}.#{global_outputs[:AccountSubDomain]}.autoscout24.com"
   end
 
+  def estimate(template)
+    Stacker.estimate_template_cost(template)
+  end
+
   def global_outputs
     @lazy_global_outputs ||= Stack.get_stack_outputs(global_stack_name)
   end
