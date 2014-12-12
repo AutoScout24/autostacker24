@@ -93,7 +93,7 @@ module Stack
     nil
   end
 
-  def self.estimate_template_cost(template)
+  def self.estimate_template_cost(template, parameters)
     cloud_formation.estimate_template_cost(:template_body => template)
   end
 
