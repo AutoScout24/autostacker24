@@ -1,5 +1,5 @@
 require 'json'
-require 'autostack24/stack'
+require 'autostack24/stack.rb'
 
 class ServiceStack
 
