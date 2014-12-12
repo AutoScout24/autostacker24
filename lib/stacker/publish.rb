@@ -25,7 +25,7 @@ module Stacker
     )
   end
 
-  def s3client
+  def self.s3client
     Aws::S3::Client.new(:region => ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
   end
 
