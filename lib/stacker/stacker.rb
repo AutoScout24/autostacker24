@@ -94,7 +94,7 @@ module Stacker
   end
 
   def self.estimate_template_cost(template, parameters)
-    cloud_formation.estimate_template_cost(:template_body => template)
+    cloud_formation.estimate_template_cost(:template_body => template, :parameters => parameters)
   end
 
   def self.cloud_formation # lazy CloudFormation client
