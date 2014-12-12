@@ -1,5 +1,5 @@
 require 'json'
-require 'autostack24/stack.rb'
+require 'stacker/stacker.rb'
 
 class ServiceStack
 
@@ -8,7 +8,7 @@ class ServiceStack
     @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL']
     @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
     @global_stack_name  = options[:global_stack_name] || ENV['GLOBAL_STACK_NAME'] || 'global'
-    @stack_name = Stack.sandboxed_stack_name(@sandbox, @name)
+    @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
   end
 
   attr_reader :name, :sandbox, :version, :stack_name, :global_stack_name
@@ -17,15 +17,15 @@ class ServiceStack
     inputs = JSON(template)['Parameters']
     global_outputs.each{|k, v| parameters[k.to_sym] = v if inputs.has_key?(k.to_s)}
     parameters[:Version] = version
-    Stack.create_or_update_stack(stack_name, template, parameters)
+    Stacker.create_or_update_stack(stack_name, template, parameters)
   end
 
   def delete
-    Stack.delete_stack(stack_name)
+    Stacker.delete_stack(stack_name)
   end
 
   def outputs
-    @lazy_outputs ||= Stack.get_stack_outputs(stack_name).freeze
+    @lazy_outputs ||= Stacker.get_stack_outputs(stack_name).freeze
   end
 
   def url
@@ -37,7 +37,7 @@ class ServiceStack
   end
 
   def global_outputs
-    @lazy_global_outputs ||= Stack.get_stack_outputs(global_stack_name)
+    @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
   end
 end
 
