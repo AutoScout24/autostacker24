@@ -59,6 +59,9 @@ class GlobalStack
     s3.get_object(bucket: 'as24.tatsu.artefacts', key: "global-stack-template/current-#{account_name}.txt").body.read
 
     # alternatively, could we go to the stack and ask it for its "Version" parameter
+  rescue Aws::S3::Errors => e
+    $stderr.puts "Failure getting current template version from s3://as24.tatsu.artefacts/global-stack-template/current-#{account_name}.txt"
+    raise e
   end
 
   def outputs
