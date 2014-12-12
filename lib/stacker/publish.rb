@@ -22,7 +22,8 @@ module Stacker
     s3.put_object(
       bucket: 'as24.tatsu.artefacts',
       key: "global-stack-template/current-#{account_name}.txt", 
-      body: global_template_version
+      body: global_template_version,
+      acl: "bucket-owner-full-control"
     )
   end
 
