@@ -3,6 +3,7 @@ require 'aws-sdk'
 module Stacker
 
   def self.create_or_update_stack(stack_name, template_body, parameters)
+    puts "create_or_update_stack #{stack_name}"
     if find_stack(stack_name).nil?
       puts "Creating new stack #{stack_name}"
       create_stack(stack_name, template_body, parameters)
@@ -66,7 +67,9 @@ module Stacker
   def self.find_stack(stack_name)
     cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
   rescue Aws::CloudFormation::Errors::ValidationError => error
+    puts "Error: #{error}"
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
+    puts "Stack does not exist, apparently"
     nil
   end
 

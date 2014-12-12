@@ -34,7 +34,7 @@ class GlobalStack
       parameters[:BastionAmi] = s3.get_object(bucket: 'as24.tatsu.artefacts', key: s3_key).body.read.strip
     end
 
-    puts "create_or_update_stack(#{stack_name}, #{template}, #{parameters})"
+    puts "create_or_update_stack(#{stack_name}, template, #{parameters})"
     Stacker.create_or_update_stack(stack_name, template, parameters)
   end
 
