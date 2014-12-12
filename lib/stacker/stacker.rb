@@ -73,6 +73,9 @@ module Stacker
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
     puts "Stack does not exist, apparently"
     nil
+  rescue Exception => e
+    puts "Error: #{e}"
+    raise e
   end
 
   def self.get_stack_outputs(stack_name, hash = {})
