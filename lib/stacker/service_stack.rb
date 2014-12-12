@@ -28,6 +28,10 @@ class ServiceStack
     @lazy_outputs ||= Stacker.get_stack_outputs(stack_name).freeze
   end
 
+  def url
+    "http://#{stack_name}.#{global_outputs[:AccountSubDomain]}.autoscout24.com"
+  end
+
   def global_outputs
     @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
   end
