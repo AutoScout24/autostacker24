@@ -33,7 +33,7 @@ class ServiceStack
   end
 
   def estimate(template, parameters)
-    Stacker.estimate_template_cost(template, parameters)
+    Stack.estimate_template_cost(template, parameters)
   end
 
   def global_outputs
