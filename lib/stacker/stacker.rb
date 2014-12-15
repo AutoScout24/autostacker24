@@ -57,7 +57,7 @@ module Stacker
   end
 
   def self.find_stack(stack_name)
-    stack = cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
   rescue Aws::CloudFormation::Errors::ValidationError => error
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
     nil
@@ -93,8 +93,8 @@ module Stacker
     nil
   end
 
-  def self.estimate_template_cost(template, parameters)
-    cloud_formation.estimate_template_cost(:template_body => template, :parameters => transform_parameters(parameters))
+  def self.estimate_template_cost(template_body, parameters)
+    cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
   end
 
   def self.cloud_formation # lazy CloudFormation client
