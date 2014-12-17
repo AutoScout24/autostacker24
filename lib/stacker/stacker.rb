@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'yaml'
 
 module Stacker
 
@@ -11,15 +12,25 @@ module Stacker
   end
 
   def self.create_stack(stack_name, template_body, parameters)
+puts "KSM: create_stack(#{stack_name}, template_body, #{parameters})"
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body,
-                                 on_failure:    'DELETE',
+                                 on_failure:    'DO_NOTHING',
                                  parameters:    transform_parameters(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
+puts "KSM: waiting for stack"
     wait_for_stack(stack_name, :create)
+puts "KSM: finished waiting for stack"
+  rescue Aws::CloudFormation::Errors::Error => error
+    puts "KSM: AWS exception: #{error}"
+    raise error
+  rescue Exception => e
+    puts "KSM: Exception: #{e}"
+    raise e
   end
 
   def self.update_stack(stack_name, template_body, parameters)
+puts "KSM: updating stack #{stack_name}"
     begin
       cloud_formation.update_stack(stack_name:    stack_name,
                                    template_body: template_body,
@@ -57,7 +68,9 @@ module Stacker
   end
 
   def self.find_stack(stack_name)
-    cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    cloud_formation.describe_stacks(stack_name: stack_name).stacks.map { |stackeroo|
+      puts "KSM: Stack: #{stackeroo.to_yaml}"
+    }.first
   rescue Aws::CloudFormation::Errors::ValidationError => error
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
     nil
