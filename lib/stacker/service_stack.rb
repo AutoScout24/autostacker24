@@ -1,5 +1,6 @@
 require 'json'
-require 'stacker/stacker.rb'
+#require 'stacker/stacker.rb'
+require_relative 'stacker.rb'
 
 class ServiceStack
 
@@ -7,8 +8,10 @@ class ServiceStack
     @name = name
     @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL']
     @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
+    @account = ENV['ACCOUNT']
     @global_stack_name  = options[:global_stack_name] || ENV['GLOBAL_STACK_NAME'] || 'global'
-    @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
+    @stacker = Stacker.new( { :target_account => @account } )
+    @stack_name = @stacker.sandboxed_stack_name(@sandbox, @name)
   end
 
   attr_reader :name, :sandbox, :version, :stack_name, :global_stack_name
@@ -17,15 +20,15 @@ class ServiceStack
     inputs = JSON(template)['Parameters']
     global_outputs.each{|k, v| parameters[k.to_sym] = v if inputs.has_key?(k.to_s)}
     parameters[:Version] = version
-    Stacker.create_or_update_stack(stack_name, template, parameters)
+    @stacker.create_or_update_stack(stack_name, template, parameters)
   end
 
   def delete
-    Stacker.delete_stack(stack_name)
+    @stacker.delete_stack(stack_name)
   end
 
   def outputs
-    @lazy_outputs ||= Stacker.get_stack_outputs(stack_name).freeze
+    @lazy_outputs ||= @stacker.get_stack_outputs(stack_name).freeze
   end
 
   def url
@@ -33,14 +36,17 @@ class ServiceStack
   end
 
   def estimate(template, parameters)
-    Stacker.estimate_template_cost(template, parameters)
+    @stacker.estimate_template_cost(template, parameters)
   end
 
   def global_outputs
-    @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
+    @lazy_global_outputs ||= @stacker.get_stack_outputs(global_stack_name)
   end
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing
+
+  stack = ServiceStack.new('jmueller-test')
+  stack.create_or_update(IO.read('test.json'),{})
 
 end
