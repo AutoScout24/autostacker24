@@ -1,6 +1,6 @@
-# Stacker
+# AutoStacker24
 
-Stacker is a small ruby library for managing AWS CloudFormation stacks for Autoscout24.
+AutoStacker24 is a small ruby library for managing AWS CloudFormation stacks.
 
 ## Development setup
 
