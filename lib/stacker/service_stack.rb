@@ -1,5 +1,5 @@
 require 'json'
-require 'stacker/stacker.rb'
+require_relative 'stacker.rb'
 
 class ServiceStack
 

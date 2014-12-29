@@ -40,7 +40,7 @@ module Stacker
 
   def self.wait_for_stack(stack_name, operation, timeout_in_minutes = 15)
     stop_time = Time.now + timeout_in_minutes * 60
-    finished = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED)$/
+    finished = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     while Time.now < stop_time
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
@@ -50,8 +50,9 @@ module Stacker
                           when :delete then /DELETE_COMPLETE$/
                         end
       return true if status =~ expected_status
-      fail "waiting for stack #{stack_name} failed, current status #{status}" if status =~ finished
-      sleep(5)
+      fail "#{stack_name} failed, current status #{status}" if status =~ finished
+      puts "waiting for #{stack_name}, current status #{status}"
+      sleep(7)
     end
     fail "waiting for stack timeout after #{timeout_in_minutes} minutes"
   end
@@ -98,7 +99,7 @@ module Stacker
   end
 
   def self.cloud_formation # lazy CloudFormation client
-    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(:region => ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
+    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(region: ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
   end
 
 end
