@@ -29,7 +29,7 @@ class ServiceStack
   end
 
   def url
-    "http://#{stack_name}.#{global_outputs[:AccountSubDomain]}.autoscout24.com"
+    "htts://#{stack_name}.#{global_outputs[:AccountSubDomain]}.autoscout24.com"
   end
 
   def estimate(template, parameters)

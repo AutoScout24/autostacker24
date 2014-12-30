@@ -16,13 +16,13 @@ Add gem dependencies to the Gemfile, and re-run `bundle install`.
 
 ## Using
 
-Declare a dependency on the stacker gem (note: work in progress), preferably in a Gemfile:
+Declare a dependency on the gem, preferably in a Gemfile:
 
-    gem 'stacker', :source => 'https://TBD'
+    gem 'autostacker24', :source => 'https://as24.tatsu.artefacts.s3.amazonaws.com/gem_repo/'
 
 Use it in your rakefile or Ruby code:
 
-    require 'stacker/service_stack'
+    require 'autostacker24'
 
 See the lab-service for example code, or an existing Tatsu service.
 
