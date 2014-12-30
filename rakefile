@@ -1,12 +1,15 @@
+
 require 'bundler'
 require 'bundler/gem_tasks'
 require 'rake/clean'
 require 'aws-sdk'
+
+
 CLEAN.include('pkg/**/*')
 
 Bundler::GemHelper.install_tasks
 
-task :default => [:build]
+task :default => :build
 
 desc "push the gem to S3"
 task :publish do
