@@ -3,12 +3,12 @@ require_relative 'stacker.rb'
 
 class ServiceStack
 
-  def initialize(name, options = {})
-    @name = name
-    @version = options[:version] || ENV['VERSION'] || ENV['GO_PIPELINE_LABEL']
-    @sandbox = options[:sandbox] || ENV['SANDBOX'] || (ENV['GO_JOB_NAME'].nil? && `whoami`.strip) # use whoami if no sandbox is given
-    @global_stack_name  = options[:global_stack_name] || ENV['GLOBAL_STACK_NAME'] || 'global'
-    @stack_name = Stacker.sandboxed_stack_name(@sandbox, @name)
+  def initialize(name, version, sandbox = nil, global_stack_name = nil)
+    @name = name || fail('mandatory name is not specified')
+    @version = version || ENV['VERSION'] || fail('mandatory version is not specified')
+    @sandbox = sandbox || ENV['SANDBOX']
+    @stack_name = (sandbox ? "#{sandbox}-" : '') + name
+    @global_stack_name  = global_stack_name || ENV['GLOBAL_STACK_NAME'] || 'global'
   end
 
   attr_reader :name, :sandbox, :version, :stack_name, :global_stack_name
@@ -25,20 +25,17 @@ class ServiceStack
   end
 
   def outputs
-    @lazy_outputs ||= Stacker.get_stack_outputs(stack_name).freeze
+    @lazy_outputs ||= Stacker.get_stack_outputs(stack_name)
   end
 
-  def url
-    "htts://#{stack_name}.#{global_outputs[:AccountSubDomain]}.autoscout24.com"
+  def global_outputs
+    @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
   end
 
   def estimate(template, parameters)
     Stacker.estimate_template_cost(template, parameters)
   end
 
-  def global_outputs
-    @lazy_global_outputs ||= Stacker.get_stack_outputs(global_stack_name)
-  end
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing

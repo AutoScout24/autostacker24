@@ -64,10 +64,14 @@ module Stacker
     nil
   end
 
+  def self.estimate_template_cost(template_body, parameters)
+    cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
+  end
+
   def self.get_stack_outputs(stack_name, hash = {})
     stack = find_stack(stack_name)
     fail "stack #{stack_name} not found" unless stack
-    transform_outputs(stack.outputs, hash)
+    transform_outputs(stack.outputs, hash).freeze
   end
 
   def self.transform_outputs(outputs, existing_outputs = {})
@@ -78,24 +82,9 @@ module Stacker
     parameters.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
   end
 
-  def self.sandboxed_stack_name(sandbox, stack_name)
-    (sandbox ? "#{sandbox}-" : '') + stack_name
-  end
-
-  def self.get_stack_resources(stack_name, logical_resource_id)
-    cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources.select{|p| p.logical_resource_id == logical_resource_id}.first
-
-    # maybe we want to return something like a mop from logical_resource_id -> resource, if more than one resource is interesting
-    # resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
-    # resources.inject({}){|map, resource| map.merge(resource.logical_resource_id => resource)}
-
-  rescue Aws::CloudFormation::Errors::ValidationError => error
-    raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
-    nil
-  end
-
-  def self.estimate_template_cost(template_body, parameters)
-    cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
+  def self.get_stack_resources(stack_name)
+    resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
+    resources.inject({}){|map, resource| map.merge(resource.logical_resource_id => resource)}.freeze
   end
 
   def self.cloud_formation # lazy CloudFormation client
