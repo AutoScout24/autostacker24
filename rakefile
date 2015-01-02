@@ -11,7 +11,7 @@ task :clean do
 end
 
 desc 'Build Gem'
-task :build do
+task :build => :clean do
   spec = Gem::Specification.new do |s|
     s.name           = 'autostacker24'
     s.authors        = ['Johannes Mueller', 'Christian Rodemeyer']
