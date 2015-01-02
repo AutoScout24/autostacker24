@@ -1,12 +1,7 @@
-Gem::Specification.new do |s|
-    s.name           = 'autostacker24'
-    s.authors        = ['Johannes Mueller', 'Christian Rodemeyer']
-    s.email          = %w(jmueller@autoscout24.com crodemeyer@autoscout24.com)
-    s.homepage       = 'https://github.com/AutoScout24/autostacker24'
-    s.summary        = 'Library for managing AWS CloudFormation stacks'
-    s.description    = 'n/a'
-    s.license        = 'MIT'
-    
-    s.version        = "1.0.1"
-    s.add_dependency 'aws-sdk', '~> 2.0.pre'
-end
+    # This file is only necessary to help Bundler installing directly the newest version from Github directly
+
+    Gem::Specification.new do |s|
+      s.name           = 'autostacker24'
+      s.version        = "1.0.1420193532"
+      s.add_dependency 'aws-sdk', '~> 2.0.pre'
+    end

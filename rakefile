@@ -3,7 +3,7 @@ require 'rubygems'
 require 'rubygems/package'
 include FileUtils
 
-MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
+MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "#{Time.now.tv_sec}"
 
 desc 'Clean temporary files'
 task :clean do
@@ -21,10 +21,22 @@ task :build do
     s.description    = 'n/a'
     s.license        = 'MIT'
     s.files          = FileList['lib/**/*']
-    s.version        = "1.0.1"
+    s.version        = "1.0.#{MINOR_VERSION}"
     s.add_dependency 'aws-sdk', '~> 2.0.pre'
   end
   mv Gem::Package.build(spec), 'gems'
+
+  # help bundler finding the latest version
+  gemspec = <<-END
+    # This file is only necessary to help Bundler installing directly the newest version from Github directly
+
+    Gem::Specification.new do |s|
+      s.name           = 'autostacker24'
+      s.version        = "$version$"
+      s.add_dependency 'aws-sdk', '~> 2.0.pre'
+    end
+  END
+  File.write('.gemspec', gemspec.sub('$version$', spec.version.to_s))
 end
 
 desc 'Install latetst Gem'
