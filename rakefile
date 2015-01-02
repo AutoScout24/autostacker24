@@ -1,8 +1,14 @@
 
 require 'rubygems'
 require 'rubygems/package'
+include FileUtils
 
 MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || Time.now.tv_sec.to_s
+
+desc 'Clean temporary files'
+task :clean do
+  rm FileList['*.gem']
+end
 
 desc 'Build Gem'
 task :build do
@@ -10,17 +16,22 @@ task :build do
     s.name           = 'autostacker24'
     s.authors        = ['Johannes Mueller', 'Christian Rodemeyer']
     s.email          = %w(jmueller@autoscout24.com crodemeyer@autoscout24.com)
-    s.description    = 'Library for managing AWS CloudFormation stacks'
+    s.homepage       = 'https://github.com/AutoScout24/autostacker24'
     s.summary        = 'Library for managing AWS CloudFormation stacks'
+    s.description    = 'n/a'
     s.license        = 'MIT'
     s.files          = FileList['lib/**/*']
-    s.require_paths  = ['lib']
     s.version        = "1.0.#{MINOR_VERSION}"
     s.add_dependency 'aws-sdk', '~> 2.0.pre'
   end
-  Gem::Package.build(spec)
+  mv Gem::Package.build(spec), 'gems'
 end
 
+desc 'Install latetst Gem'
+task :install do
+  source = File.expand_path('./gems')
+  puts `gem install autostacker24 -N --user-install --source file://#{source}`
+end
 
-task :default => :build
+task :default => [:clean, :build]
 
