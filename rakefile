@@ -21,8 +21,8 @@ task :build do
     s.description    = 'n/a'
     s.license        = 'MIT'
     s.files          = FileList['lib/**/*']
-    s.version        = "1.0.#{MINOR_VERSION}"
-    s.add_dependency 'aws-sdk', '~> 2.0.pre'
+    s.version        = "1.0.1"
+    s.add_runtime_dependency 'aws-sdk', '~> 2.0.pre'
   end
   mv Gem::Package.build(spec), 'gems'
 end
