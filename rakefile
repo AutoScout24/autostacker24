@@ -30,7 +30,8 @@ end
 task :publish do
   key = ENV['RUBYGEMSKEY']
   if key
-    File.write(File.expand_path('~/.gem/credentials'), ":rubygems_api_key: #{key}")
+    credentials = File.expand_path('~/.gem/credentials')
+    File.write(credentials, ":rubygems_api_key: #{key}", perm: 600)
   end
 
   gem = FileList['*.gem'].first
