@@ -1,43 +1,26 @@
 
-require 'bundler'
-require 'bundler/gem_tasks'
-require 'rake/clean'
-require 'aws-sdk'
+require 'rubygems'
+require 'rubygems/package'
 
+MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || Time.now.tv_sec.to_s
 
-CLEAN.include('pkg/**/*')
+desc 'Build Gem'
+task :build do
+  spec = Gem::Specification.new do |s|
+    s.name           = 'autostacker24'
+    s.authors        = ['Johannes Mueller', 'Christian Rodemeyer']
+    s.email          = %w(jmueller@autoscout24.com crodemeyer@autoscout24.com)
+    s.description    = 'Library for managing AWS CloudFormation stacks'
+    s.summary        = 'Library for managing AWS CloudFormation stacks'
+    s.license        = 'MIT'
+    s.files          = FileList['lib/**/*']
+    s.require_paths  = ['lib']
+    s.version        = "1.0.#{MINOR_VERSION}"
+    s.add_dependency 'aws-sdk', '~> 2.0.pre'
+  end
+  Gem::Package.build(spec)
+end
 
-Bundler::GemHelper.install_tasks
 
 task :default => :build
 
-desc "push the gem to S3"
-task :publish do
-  aws_region = ENV['AWS_DEFAULT_REGION'] || 'eu-west-1'
-  puts "Uploading #{File.basename(gem_file_path)}"
-  s3 = Aws::S3::Client.new(:region => aws_region)
-  s3.put_object(
-    bucket: 'as24.tatsu.artefacts', 
-    key: "gem_repo/gems/#{File.basename(gem_file_path)}",
-    body: IO.read(gem_file_path)
-  )
-end
-
-def gem_file_path
-  Bundler::GemHelper.instance.gem_file_path
-end
-
-def gem_name
-  Bundler::GemHelper.instance.gem_name
-end
-
-module Bundler
-  class GemHelper
-    def gem_file_path
-      Dir[File.join(File.dirname(__FILE__), 'pkg', "#{name}-*.gem")].sort_by{|f| File.mtime(f)}.last
-    end
-    def gem_name
-      name
-    end
-  end
-end

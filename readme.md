@@ -18,11 +18,9 @@ Add gem dependencies to the Gemfile, and re-run `bundle install`.
 
 Declare a dependency on the gem, preferably in a Gemfile:
 
-    gem 'autostacker24', :source => 'https://as24.tatsu.artefacts.s3.amazonaws.com/gem_repo/'
+    gem 'autostacker24'
 
 Use it in your rakefile or Ruby code:
 
     require 'autostacker24'
-
-See the lab-service for example code, or an existing Tatsu service.
 
