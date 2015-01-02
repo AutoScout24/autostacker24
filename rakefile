@@ -3,7 +3,7 @@ require 'rubygems'
 require 'rubygems/package'
 include FileUtils
 
-MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || Time.now.tv_sec.to_s
+MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
 
 desc 'Clean temporary files'
 task :clean do
