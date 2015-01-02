@@ -84,7 +84,7 @@ module Stacker
 
   def self.get_stack_resources(stack_name)
     resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
-    resources.inject({}){|map, resource| map.merge(resource.logical_resource_id => resource)}.freeze
+    resources.inject({}){|map, resource| map.merge(resource.logical_resource_id.to_sym => resource)}.freeze
   end
 
   def self.cloud_formation # lazy CloudFormation client
