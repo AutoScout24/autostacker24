@@ -3,7 +3,7 @@ require 'rubygems'
 require 'rubygems/package'
 include FileUtils
 
-MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "#{Time.now.tv_sec}"
+MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
 
 desc 'Clean temporary files'
 task :clean do
@@ -24,27 +24,20 @@ task :build do
     s.version        = "1.0.#{MINOR_VERSION}"
     s.add_dependency 'aws-sdk', '~> 2.0.pre'
   end
-  mv Gem::Package.build(spec), 'gems'
-
-  # HACK for helping bundler finding the latest version
-  gemspec = <<-END
-    # This file is only necessary to help Bundler installing directly the newest version from Github directly
-
-    Gem::Specification.new do |s|
-      s.name           = 'autostacker24'
-      s.summary        = 'Library for managing AWS CloudFormation stacks'
-      s.version        = "$version$"
-      s.add_dependency 'aws-sdk', '~> 2.0.pre'
-    end
-  END
-  File.write('.gemspec', gemspec.sub('$version$', spec.version.to_s))
+  Gem::Package.build(spec)
 end
 
-desc 'Install latetst Gem'
-task :install do
-  source = File.expand_path('./gems')
-  puts `gem install autostacker24 -N --user-install --source file://#{source}`
+task :publish do
+  key = ENV['RUBYGEMSKEY']
+  if key
+    File.write(File.expand_path('~/.gem/credentials'), ":rubygems_api_key: #{key}")
+  end
+
+  gem = FileList['*.gem'].first
+  puts "gem push #{gem}"
+  puts `gem push #{gem}`
 end
+
 
 task :default => [:clean, :build]
 
