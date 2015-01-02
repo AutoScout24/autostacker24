@@ -28,10 +28,11 @@ task :build do
 end
 
 task :publish do
-  key = ENV['RUBYGEMSKEY']
+  key = ENV['RUBYGEMSAPIKEY']
   if key
     credentials = File.expand_path('~/.gem/credentials')
-    File.write(credentials, ":rubygems_api_key: #{key}", perm: 600)
+    File.write(credentials, ":rubygems_api_key: #{key}")
+    chmod 0600, credentials
   end
 
   gem = FileList['*.gem'].first
