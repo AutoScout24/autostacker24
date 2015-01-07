@@ -35,7 +35,7 @@ module Stacker
     end
   end
 
-  def merge_output_parameters(stack_name, template_body, parameters)
+  def self.merge_output_parameters(stack_name, template_body, parameters)
     expected_parameters = JSON(template_body)['Parameters']
     get_stack_outputs(stack_name).each do |k, v|
       parameters[k.to_sym] = v if expected_parameters.has_key?(k.to_s)
