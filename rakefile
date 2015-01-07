@@ -38,6 +38,8 @@ task :publish do
   gem = FileList['*.gem'].first
   puts "gem push #{gem}"
   puts `gem push #{gem}`
+
+  rm_f credentials
 end
 
 
