@@ -2,15 +2,16 @@ require 'aws-sdk'
 
 module Stacker
 
-  def self.create_or_update_stack(stack_name, template_body, parameters)
+  def self.create_or_update_stack(stack_name, template_body, parameters, parent_stack_name = nil)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template_body, parameters)
+      create_stack(stack_name, template_body, parameters, parent_stack_name)
     else
-      update_stack(stack_name, template_body, parameters)
+      update_stack(stack_name, template_body, parameters, parent_stack_name)
     end
   end
 
-  def self.create_stack(stack_name, template_body, parameters)
+  def self.create_stack(stack_name, template_body, parameters, parent_stack_name = nil)
+    merge_output_parameters(parent_stack_name, template_body, parameters) if parent_stack_name
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body,
                                  on_failure:    'DELETE',
@@ -19,7 +20,8 @@ module Stacker
     wait_for_stack(stack_name, :create)
   end
 
-  def self.update_stack(stack_name, template_body, parameters)
+  def self.update_stack(stack_name, template_body, parameters, parent_stack_name = nil)
+    merge_output_parameters(parent_stack_name, template_body, parameters) if parent_stack_name
     begin
       cloud_formation.update_stack(stack_name:    stack_name,
                                    template_body: template_body,
@@ -31,6 +33,14 @@ module Stacker
     else
       wait_for_stack(stack_name, :update)
     end
+  end
+
+  def merge_output_parameters(stack_name, template_body, parameters)
+    expected_parameters = JSON(template_body)['Parameters']
+    get_stack_outputs(stack_name).each do |k, v|
+      parameters[k.to_sym] = v if expected_parameters.has_key?(k.to_s)
+    end
+    parameters
   end
 
   def self.delete_stack(stack_name)
@@ -68,14 +78,14 @@ module Stacker
     cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
   end
 
-  def self.get_stack_outputs(stack_name, hash = {})
+  def self.get_stack_outputs(stack_name)
     stack = find_stack(stack_name)
     fail "stack #{stack_name} not found" unless stack
-    transform_outputs(stack.outputs, hash).freeze
+    transform_outputs(stack.outputs).freeze
   end
 
-  def self.transform_outputs(outputs, existing_outputs = {})
-    outputs.inject(existing_outputs) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
+  def self.transform_outputs(outputs)
+    outputs.inject({}) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
   end
 
   def self.transform_parameters(parameters)

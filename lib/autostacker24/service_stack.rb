@@ -14,10 +14,8 @@ class ServiceStack
   attr_reader :name, :sandbox, :version, :stack_name, :global_stack_name
 
   def create_or_update(template, parameters)
-    inputs = JSON(template)['Parameters']
-    global_outputs.each{|k, v| parameters[k.to_sym] = v if inputs.has_key?(k.to_s)}
     parameters[:Version] = version
-    Stacker.create_or_update_stack(stack_name, template, parameters)
+    Stacker.create_or_update_stack(stack_name, template, parameters, global_stack_name)
   end
 
   def delete
