@@ -22,7 +22,7 @@ task :build do
     s.license        = 'MIT'
     s.files          = FileList['lib/**/*']
     s.version        = "1.0.#{MINOR_VERSION}"
-    s.add_dependency 'aws-sdk', '~> 2.0.pre'
+    s.add_dependency 'aws-sdk-core', '~> 2'
     s.add_dependency 'json'
   end
   Gem::Package.build(spec)
