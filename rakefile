@@ -32,6 +32,7 @@ task :publish do
   key = ENV['RUBYGEMSAPIKEY']
   if key
     credentials = File.expand_path('~/.gem/credentials')
+    mkdir_p File.dirname(credentials)
     File.write(credentials, ":rubygems_api_key: #{key}")
     chmod 0600, credentials
   end
