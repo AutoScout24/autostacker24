@@ -3,15 +3,18 @@ require 'json'
 
 module Stacker
 
-  def credentials
-    @credentials
-  end
+  attr_reader :region, :credentials
 
+  # use ENV['AWS_ACCESS_KEY_ID'] and ENV['AWS_SECRET_ACCESS_KEY'] if you don't want to set credentials by code
   def credentials=(credentials)
     unless credentials == @credentials
       @lazy_cloud_formation = nil
       @credentials = credentials
     end
+  end
+
+  def region=(region) # use ENV['AWS_REGION'] or ENV['AWS_DEFAULT_REGION']
+    @region = region unless region == @region
   end
 
   def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil)
@@ -118,7 +121,14 @@ module Stacker
   end
 
   def cloud_formation # lazy CloudFormation client
-    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(region: ENV['AWS_DEFAULT_REGION'] || 'eu-west-1', credentials: @credentials)
+    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(cloud_formation_parameters)
+  end
+
+  def cloud_formation_parameters
+    params = {}
+    params[:credentials] = @credentials if @credentials
+    params[:region] = @region if @region
+    params
   end
 
   def template_body(template)
