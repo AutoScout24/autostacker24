@@ -75,6 +75,14 @@ module Stacker
     nil
   end
 
+  def all_stack_names
+    all_stacks.map{|s| s.stack_name}
+  end
+
+  def all_stacks
+    cloud_formation.describe_stacks.stacks
+  end
+
   def estimate_template_cost(template_body, parameters)
     cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
   end
@@ -99,7 +107,18 @@ module Stacker
   end
 
   def cloud_formation # lazy CloudFormation client
-    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(region: ENV['AWS_DEFAULT_REGION'] || 'eu-west-1')
+    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(region: ENV['AWS_DEFAULT_REGION'] || 'eu-west-1', credentials: @credentials)
+  end
+
+  def credentials
+    @credentials
+  end
+
+  def credentials=(credentials)
+    unless credentials == @credentials
+      @lazy_cloud_formation = nil
+      @credentials = credentials
+    end
   end
 
   extend self
