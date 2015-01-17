@@ -3,29 +3,40 @@ require 'json'
 
 module Stacker
 
-  def create_or_update_stack(stack_name, template_body, parameters, parent_stack_name = nil)
-    if find_stack(stack_name).nil?
-      create_stack(stack_name, template_body, parameters, parent_stack_name)
-    else
-      update_stack(stack_name, template_body, parameters, parent_stack_name)
+  def credentials
+    @credentials
+  end
+
+  def credentials=(credentials)
+    unless credentials == @credentials
+      @lazy_cloud_formation = nil
+      @credentials = credentials
     end
   end
 
-  def create_stack(stack_name, template_body, parameters, parent_stack_name = nil)
-    merge_output_parameters(parent_stack_name, template_body, parameters) if parent_stack_name
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil)
+    if find_stack(stack_name).nil?
+      create_stack(stack_name, template, parameters, parent_stack_name)
+    else
+      update_stack(stack_name, template, parameters, parent_stack_name)
+    end
+  end
+
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil)
+    merge_output_parameters(parent_stack_name, template, parameters) if parent_stack_name
     cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body,
+                                 template_body: template_body(template),
                                  on_failure:    'DELETE',
                                  parameters:    transform_parameters(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
     wait_for_stack(stack_name, :create)
   end
 
-  def update_stack(stack_name, template_body, parameters, parent_stack_name = nil)
-    merge_output_parameters(parent_stack_name, template_body, parameters) if parent_stack_name
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil)
+    merge_output_parameters(parent_stack_name, template, parameters) if parent_stack_name
     begin
       cloud_formation.update_stack(stack_name:    stack_name,
-                                   template_body: template_body,
+                                   template_body: template_body(template),
                                    parameters:    transform_parameters(parameters),
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
@@ -36,8 +47,8 @@ module Stacker
     end
   end
 
-  def merge_output_parameters(stack_name, template_body, parameters)
-    expected_parameters = JSON(template_body)['Parameters']
+  def merge_output_parameters(stack_name, template, parameters)
+    expected_parameters = JSON(template_body(template))['Parameters']
     get_stack_outputs(stack_name).each do |k, v|
       parameters[k.to_sym] = v if expected_parameters.has_key?(k.to_s)
     end
@@ -83,8 +94,8 @@ module Stacker
     cloud_formation.describe_stacks.stacks
   end
 
-  def estimate_template_cost(template_body, parameters)
-    cloud_formation.estimate_template_cost(:template_body => template_body, :parameters => transform_parameters(parameters))
+  def estimate_template_cost(template, parameters)
+    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_parameters(parameters))
   end
 
   def get_stack_outputs(stack_name)
@@ -110,15 +121,9 @@ module Stacker
     @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(region: ENV['AWS_DEFAULT_REGION'] || 'eu-west-1', credentials: @credentials)
   end
 
-  def credentials
-    @credentials
-  end
-
-  def credentials=(credentials)
-    unless credentials == @credentials
-      @lazy_cloud_formation = nil
-      @credentials = credentials
-    end
+  def template_body(template)
+    template = File.read(template) if File.exists?(template)
+    template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''}
   end
 
   extend self
@@ -126,5 +131,13 @@ module Stacker
 end
 
 if $0 ==__FILE__ # placeholder for interactive testing
+  template = <<-EOL
+    bla bla //comment
+    bla "//no comment"
+    bla // still a "comment"
+    bla "some string" // comment
+  EOL
+
+  puts Stacker.template_body(template)
 
 end
