@@ -112,6 +112,7 @@ module Stacker
   end
 
   def transform_parameters(parameters)
+    parameters.each{|k,v| fail "#{k} must not be nil" if v.nil? }
     parameters.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
   end
 
