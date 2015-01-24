@@ -1,5 +1,5 @@
 require 'aws-sdk-core'
-require 'json'
+require 'set'
 
 module Stacker
 
@@ -26,21 +26,21 @@ module Stacker
   end
 
   def create_stack(stack_name, template, parameters, parent_stack_name = nil)
-    merge_output_parameters(parent_stack_name, template, parameters) if parent_stack_name
+    merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
                                  on_failure:    'DELETE',
-                                 parameters:    transform_parameters(parameters),
+                                 parameters:    transform_input(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
     wait_for_stack(stack_name, :create)
   end
 
   def update_stack(stack_name, template, parameters, parent_stack_name = nil)
-    merge_output_parameters(parent_stack_name, template, parameters) if parent_stack_name
     begin
+      merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
                                    template_body: template_body(template),
-                                   parameters:    transform_parameters(parameters),
+                                   parameters:    transform_input(parameters),
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
@@ -50,12 +50,26 @@ module Stacker
     end
   end
 
-  def merge_output_parameters(stack_name, template, parameters)
-    expected_parameters = JSON(template_body(template))['Parameters']
-    get_stack_outputs(stack_name).each do |k, v|
-      parameters[k.to_sym] = v if expected_parameters.has_key?(k.to_s)
+  # if stack_name is given assign read the output parameters and copy them to the given template parameters
+  # if a aparameter is already defined, it will not be overwritten
+  # finally, if mandatory parameters are missing, an error will be raised
+  def merge_and_validate(template, parameters, stack_name)
+    valid = validate_template(template).parameters
+    if stack_name
+      present = valid.map{|p| p.parameter_key.to_sym}
+      get_stack_output(stack_name).each do |key, value|
+        parameters[key] ||= value if present.include?(key)
+      end
     end
+    mandatory = valid.select{|p| p.default_value.nil?}.map{|p| p.parameter_key.to_sym}
+    diff = mandatory.to_set - parameters.keys.to_set
+    raise "Missing one ore more mandatory parameters: #{diff.to_a.join(', ')}" if diff.length > 0
     parameters
+  end
+  private :merge_and_validate
+
+  def validate_template(template)
+    cloud_formation.validate_template(template_body: template_body(template))
   end
 
   def delete_stack(stack_name)
@@ -75,11 +89,11 @@ module Stacker
                           when :delete then /DELETE_COMPLETE$/
                         end
       return true if status =~ expected_status
-      fail "#{stack_name} failed, current status #{status}" if status =~ finished
+      raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
       puts "waiting for #{stack_name}, current status #{status}"
       sleep(7)
     end
-    fail "waiting for stack timeout after #{timeout_in_minutes} minutes"
+    raise "waiting for stack timeout after #{timeout_in_minutes} minutes"
   end
 
   def find_stack(stack_name)
@@ -98,22 +112,27 @@ module Stacker
   end
 
   def estimate_template_cost(template, parameters)
-    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_parameters(parameters))
+    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_input(parameters))
   end
 
   def get_stack_outputs(stack_name)
+    puts 'get_stack_outputs is obsolete, please use get_stack_output'
+    get_stack_output(stack_name)
+  end
+
+  def get_stack_output(stack_name)
     stack = find_stack(stack_name)
-    fail "stack #{stack_name} not found" unless stack
-    transform_outputs(stack.outputs).freeze
+    raise "stack #{stack_name} not found" unless stack
+    transform_output(stack.outputs).freeze
   end
 
-  def transform_outputs(outputs)
-    outputs.inject({}) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
+  def transform_output(output)
+    output.inject({}) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
   end
 
-  def transform_parameters(parameters)
-    parameters.each{|k,v| fail "#{k} must not be nil" if v.nil? }
-    parameters.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
+  def transform_input(input)
+    input.each{|k,v| raise "#{k} must not be nil" if v.nil? }
+    input.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
   end
 
   def get_stack_resources(stack_name)
@@ -122,14 +141,13 @@ module Stacker
   end
 
   def cloud_formation # lazy CloudFormation client
-    @lazy_cloud_formation ||= Aws::CloudFormation::Client.new(cloud_formation_parameters)
-  end
-
-  def cloud_formation_parameters
-    params = {}
-    params[:credentials] = @credentials if @credentials
-    params[:region] = @region if @region
-    params
+    unless @lazy_cloud_formation
+      params = {}
+      params[:credentials] = @credentials if @credentials
+      params[:region] = @region if @region
+      @lazy_cloud_formation = Aws::CloudFormation::Client.new(params)
+    end
+    @lazy_cloud_formation
   end
 
   def template_body(template)
@@ -138,17 +156,5 @@ module Stacker
   end
 
   extend self
-
-end
-
-if $0 ==__FILE__ # placeholder for interactive testing
-  template = <<-EOL
-    bla bla //comment
-    bla "//no comment"
-    bla // still a "comment"
-    bla "some string" // comment
-  EOL
-
-  puts Stacker.template_body(template)
 
 end

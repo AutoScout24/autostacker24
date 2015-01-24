@@ -23,7 +23,6 @@ task :build do
     s.files          = FileList['lib/**/*']
     s.version        = "1.0.#{MINOR_VERSION}"
     s.add_dependency 'aws-sdk-core', '~> 2'
-    s.add_dependency 'json'
   end
   Gem::Package.build(spec)
 end
