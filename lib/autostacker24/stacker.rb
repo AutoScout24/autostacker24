@@ -90,10 +90,10 @@ module Stacker
                         end
       return true if status =~ expected_status
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
-      puts "waiting for #{stack_name}, current status #{status}"
+      puts "waiting for #{operation} stack #{stack_name}, current status #{status}"
       sleep(7)
     end
-    raise "waiting for stack timeout after #{timeout_in_minutes} minutes"
+    raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
   end
 
   def find_stack(stack_name)
