@@ -14,7 +14,10 @@ module Stacker
   end
 
   def region=(region) # use ENV['AWS_REGION'] or ENV['AWS_DEFAULT_REGION']
-    @region = region unless region == @region
+    unless region == @region
+      @lazy_cloud_formation = nil
+      @region = region
+    end
   end
 
   def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil)
