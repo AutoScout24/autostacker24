@@ -1,6 +1,8 @@
 require 'aws-sdk-core'
 require 'set'
 
+require_relative 'template_preprocessor.rb'
+
 module Stacker
 
   attr_reader :region, :credentials
@@ -155,7 +157,7 @@ module Stacker
 
   def template_body(template)
     template = File.read(template) if File.exists?(template)
-    template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''}
+    AutoStacker24::Preprocessor.preprocess(template)
   end
 
   extend self
