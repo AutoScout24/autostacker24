@@ -26,7 +26,7 @@ def replace_variables
      "embedded": "bla @var2 @bla2",
      "array": ["@var2", "@var3"],
      "escape": "bla@@bla.com",
-     "nested": {"one": "nested", "two": "@AWS::StackName"}
+     "nested": {"one": "nested", "two": "@AWS::StackName123-bla"}
    }
    EOF
 

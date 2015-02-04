@@ -51,7 +51,7 @@ module AutoStacker24
     end
 
     def self.tokenize(s)
-      pattern = /@@|@([^@\s]+)/
+      pattern = /@@|@([\w:]+)/
       tokens = []
       until s.empty?
         m = pattern.match(s)
