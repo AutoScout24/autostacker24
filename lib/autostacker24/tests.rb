@@ -3,6 +3,7 @@ require_relative 'stacker.rb'
 
 def remove_comments
   template = <<-EOL
+  // AutoStacker24
   {
     "bla": "bla", //comment
     "fasel": "//no comment",
@@ -16,6 +17,7 @@ end
 
 def replace_variables
   template = <<-EOF
+   // AutoStacker24
    {
      "bla": 5,
      "single": "@var1",
