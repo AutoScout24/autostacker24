@@ -20,6 +20,8 @@ module AutoStacker24
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
         preprocess_string(json)
+      else
+        json
       end
     end
 
