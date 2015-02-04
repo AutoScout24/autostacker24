@@ -8,7 +8,7 @@ module AutoStacker24
     def self.preprocess(template)
       if template =~ /^\s*\/{2}\s*/i
         template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
-        template = preprocess_json(JSON(template)).to_s
+        template = preprocess_json(JSON(template)).to_json
       end
       template
     end
