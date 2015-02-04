@@ -13,6 +13,8 @@ def remove_comments
   EOL
 
   puts Stacker.template_body(template)
+
+  puts Stacker.template_body("//AutoStacker\n{\"bla\":\"@blub\"}")
 end
 
 def replace_variables
