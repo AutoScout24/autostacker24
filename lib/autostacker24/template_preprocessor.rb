@@ -49,13 +49,12 @@ module AutoStacker24
       else # we need a join construct
         {'Fn::Join' => ['', parts]}
       end
-
     end
 
     def self.tokenize(s)
       pattern = /@@|@([\w:]+)/
       tokens = []
-      until s.empty?
+      loop do
         m = pattern.match(s)
         if m
           tokens << m.pre_match unless m.pre_match.empty?
@@ -63,7 +62,7 @@ module AutoStacker24
           s = m.post_match
         else
           tokens << s
-          s = ''
+          break
         end
       end
       tokens
