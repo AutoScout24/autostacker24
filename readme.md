@@ -25,9 +25,9 @@ Example:
 
 ```ruby
 params = {
-  ReadThroughput: 25,
+  ReadThroughput:  25,
   WriteThroughput: 10,
-  AmiId: "ami-4711"
+  AmiId:           "ami-4711"
 }
 
 Stacker.create_or_update_stack('my-stack, 'service-stack.json', params)
@@ -56,7 +56,7 @@ For finer control Stacker offers also
   instead of  | just write
   ------------- | -------------
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
-  `"prop": {"Fn::Join":["-",[{"Ref": "AWS::StackName"}, {"Ref": "tableName"}]]}`|`"prop": "@AWS::StackName-@tableName"`
+  ```"prop": {"Fn::Join":["-",[{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"]]}```|```"prop": "@AWS::StackName-@tableName-test"```
   `"prop": "bla@@hullebulle.org"` | `"prop": "bla@hullebulle.org"`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
