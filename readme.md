@@ -53,9 +53,11 @@ For finer control Stacker offers also
    long strings. AutoStacker24 gives you a more convenient syntax: Inside a string, you can
    reference a parameter with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
 
-   - "@myVar" becomes {"Ref": "myVar"}
-   - "first @varOne second @varTwo" becomes `{"Fn::Join":["",["first ", {"Ref": "varOne"}, " second ", {"Ref":"varTwo"}]]}`
-   - "bla@@hullebulle.org" becomes "bla@hullebulle.org"
+  instead of  | just write
+  ------------- | -------------
+  `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
+  `"tableName": {"Fn::Join":["-",[{"Ref": "AWS::StackNamee"}, "someTable"]]}`|`"tableName": "first @varOne second @varTwo"`
+  `"prop": "bla@@hullebulle.org"` | `"prop": "bla@hullebulle.org"`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
 your template must start with a comment:
