@@ -56,7 +56,7 @@ For finer control Stacker offers also
   instead of  | just write
   ------------- | -------------
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
-  `"tableName": {"Fn::Join":["-",[{"Ref": "AWS::StackNamee"}, "someTable"]]}`|`"tableName": "first @varOne second @varTwo"`
+  `"prop": {"Fn::Join":["-",[{"Ref": "AWS::StackName"}, {"Ref": "tableName"}]]}`|`"prop": "@AWS::StackName-@tableName"`
   `"prop": "bla@@hullebulle.org"` | `"prop": "bla@hullebulle.org"`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
