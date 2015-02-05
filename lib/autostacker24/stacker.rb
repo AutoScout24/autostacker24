@@ -121,7 +121,6 @@ module Stacker
   end
 
   def get_stack_outputs(stack_name)
-    puts 'get_stack_outputs is obsolete, please use get_stack_output'
     get_stack_output(stack_name)
   end
 
