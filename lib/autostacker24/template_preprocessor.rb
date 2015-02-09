@@ -61,7 +61,7 @@ module AutoStacker24
           tokens << m.to_s
           s = m.post_match
         else
-          tokens << s
+          tokens << s unless s.empty? && !tokens.empty?
           break
         end
       end

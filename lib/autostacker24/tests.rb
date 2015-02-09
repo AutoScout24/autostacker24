@@ -13,7 +13,6 @@ def remove_comments
   EOL
 
   puts Stacker.template_body(template)
-
   puts Stacker.template_body("//AutoStacker\n{\"bla\":\"@blub\"}")
 end
 
@@ -31,6 +30,7 @@ def replace_variables
    }
    EOF
 
+   puts AutoStacker24::Preprocessor.tokenize('content').inspect
    puts AutoStacker24::Preprocessor.tokenize('bla @@@var2 @bla2 xyz').inspect
    puts Stacker.template_body(template)
 end
@@ -41,7 +41,7 @@ if $0 ==__FILE__ # placeholder for interactive testing
 
   #OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE # Windows Hack
 
-  remove_comments
+  #remove_comments
   replace_variables
 
 end
