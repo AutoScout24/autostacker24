@@ -41,6 +41,7 @@ module Stacker
   end
 
   def update_stack(stack_name, template, parameters, parent_stack_name = nil)
+     seen_events = get_stack_events(stack_name).map {|e| e[:event_id] }
     begin
       merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
@@ -51,7 +52,7 @@ module Stacker
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       find_stack(stack_name)
     else
-      wait_for_stack(stack_name, :update)
+      wait_for_stack(stack_name, :update, seen_events)
     end
   end
 
@@ -82,14 +83,11 @@ module Stacker
     wait_for_stack(stack_name, :delete)
   end
 
-  def wait_for_stack(stack_name, operation, timeout_in_minutes = 15)
+  def wait_for_stack(stack_name, operation, seen_events = Set.new)
+    timeout_in_minutes = 60 # for now
     stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
-    seen_events = Set.new
-
     puts "waiting for #{operation} stack #{stack_name}"
-
-    get_stack_events(stack_name).each {|e| seen_events << e[:event_id] }
 
     while Time.now < stop_time
       stack = find_stack(stack_name)
