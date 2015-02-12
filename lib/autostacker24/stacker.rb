@@ -41,7 +41,7 @@ module Stacker
   end
 
   def update_stack(stack_name, template, parameters, parent_stack_name = nil)
-     seen_events = get_stack_events(stack_name).map {|e| e[:event_id] }
+    seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
@@ -79,8 +79,9 @@ module Stacker
   end
 
   def delete_stack(stack_name)
+    seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     cloud_formation.delete_stack(stack_name: stack_name)
-    wait_for_stack(stack_name, :delete)
+    wait_for_stack(stack_name, :delete, seen_events)
   end
 
   def wait_for_stack(stack_name, operation, seen_events = Set.new)
@@ -99,12 +100,11 @@ module Stacker
                         end
       return true if status =~ expected_status
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
-      get_stack_events(stack_name).select{|e| !seen_events.include?(e[:event_id]) }
-                                  .sort_by{|e| e[:timestamp]}
-                                  .each{
-                                    |e| seen_events << e[:event_id]
-                                    puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
-                                  }
+      new_events = get_stack_events(stack_name).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
+      new_events.each do |e|
+        seen_events << e[:event_id]
+        puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
+      end
       sleep(7)
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
