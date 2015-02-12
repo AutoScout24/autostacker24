@@ -101,7 +101,7 @@ module Stacker
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
       get_stack_events(stack_name).select{ |e| e[:timestamp] > start_time && !seen_events.include?(e[:event_id]) }
                                   .sort_by{|e| e[:timestamp]}
-                                  .each{·
+                                  .each{
                                     |e| seen_events << e[:event_id]
                                     puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
                                   }
