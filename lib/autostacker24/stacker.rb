@@ -83,12 +83,14 @@ module Stacker
   end
 
   def wait_for_stack(stack_name, operation, timeout_in_minutes = 15)
-    start_time  = Time.now
     stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
-    seen_events = Array.new
+    seen_events = Set.new
 
     puts "waiting for #{operation} stack #{stack_name}"
+
+    get_stack_events(stack_name).each {|e| seen_events << e[:event_id] }
+
     while Time.now < stop_time
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
@@ -99,7 +101,7 @@ module Stacker
                         end
       return true if status =~ expected_status
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
-      get_stack_events(stack_name).select{ |e| e[:timestamp] > start_time && !seen_events.include?(e[:event_id]) }
+      get_stack_events(stack_name).select{!seen_events.include?(e[:event_id]) }
                                   .sort_by{|e| e[:timestamp]}
                                   .each{
                                     |e| seen_events << e[:event_id]
