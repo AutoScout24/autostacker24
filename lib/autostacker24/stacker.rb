@@ -83,8 +83,12 @@ module Stacker
   end
 
   def wait_for_stack(stack_name, operation, timeout_in_minutes = 15)
-    stop_time = Time.now + timeout_in_minutes * 60
-    finished = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
+    start_time  = Time.now
+    stop_time   = Time.now + timeout_in_minutes * 60
+    finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
+    seen_events = Array.new
+
+    puts "waiting for #{operation} stack #{stack_name}"
     while Time.now < stop_time
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
@@ -95,7 +99,12 @@ module Stacker
                         end
       return true if status =~ expected_status
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
-      puts "waiting for #{operation} stack #{stack_name}, current status #{status}"
+      get_stack_events(stack_name).select{ |e| e[:timestamp] > start_time && !seen_events.include?(e[:event_id]) }
+                                  .sort_by{|e| e[:timestamp]}
+                                  .each{·
+                                    |e| seen_events << e[:event_id]
+                                    puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
+                                  }
       sleep(7)
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
@@ -142,6 +151,10 @@ module Stacker
   def get_stack_resources(stack_name)
     resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
     resources.inject({}){|map, resource| map.merge(resource.logical_resource_id.to_sym => resource)}.freeze
+  end
+
+  def get_stack_events(stack_name)
+    events = cloud_formation.describe_stack_events(stack_name: stack_name).data.stack_events
   end
 
   def cloud_formation # lazy CloudFormation client
