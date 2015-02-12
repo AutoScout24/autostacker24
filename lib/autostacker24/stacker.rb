@@ -101,7 +101,7 @@ module Stacker
                         end
       return true if status =~ expected_status
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
-      get_stack_events(stack_name).select{!seen_events.include?(e[:event_id]) }
+      get_stack_events(stack_name).select{|e| !seen_events.include?(e[:event_id]) }
                                   .sort_by{|e| e[:timestamp]}
                                   .each{
                                     |e| seen_events << e[:event_id]
