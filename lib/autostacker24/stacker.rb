@@ -92,7 +92,7 @@ module Stacker
     stack_id = find_stack(stack_name)[:stack_id]
 
     while Time.now < stop_time
-      sleep(7)
+      sleep(5)
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
       expected_status = case operation
