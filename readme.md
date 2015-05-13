@@ -38,7 +38,7 @@ For finer control Stacker offers also
   - `create_stack`
   - `update_stack`
   - `delete_stack`
-  - `validate_stack`
+  - `validate_template`
   - `get_stack_outputs`
   - `get_stack_resources`
   - `find_stack, all_stacks, all_stack_names`
