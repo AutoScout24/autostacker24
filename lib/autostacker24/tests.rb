@@ -26,7 +26,8 @@ def replace_variables
      "array": ["@var2", "@var3"],
      "escape": "bla@@bla.com",
      "nested": {"one": "nested", "two": "@AWS::StackName123-bla"},
-     "content" : { "Fn::Join" : ["", ["[general]\\n", "state_file = /var/lib/awslogs/agent-state\\n", "\\n"]]}
+     "content" : { "Fn::Join" : ["", ["[general]\\n", "state_file = /var/lib/awslogs/agent-state\\n", "\\n"]]},
+     "single_colon": "@AWS::Stack:something@Other"
    }
    EOF
 
