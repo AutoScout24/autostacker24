@@ -126,7 +126,8 @@ module Stacker
     cloud_formation.describe_stacks.stacks
   end
 
-  def estimate_template_cost(template, parameters)
+  def estimate_template_cost(template, parameters, parent_stack_name = nil)
+    merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_input(parameters))
   end
 
