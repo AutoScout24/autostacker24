@@ -22,30 +22,30 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name)
+      create_stack(stack_name, template, parameters, parent_stack_name, tags)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name)
+      update_stack(stack_name, template, parameters, parent_stack_name, tags)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body(template),
+                                 template_body: template_body(template, tags),
                                  on_failure:    'DELETE',
                                  parameters:    transform_input(parameters),
                                  capabilities:  ['CAPABILITY_IAM'])
     wait_for_stack(stack_name, :create)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
-                                   template_body: template_body(template),
+                                   template_body: template_body(template, tags),
                                    parameters:    transform_input(parameters),
                                    capabilities:  ['CAPABILITY_IAM'])
     rescue Aws::CloudFormation::Errors::ValidationError => error
@@ -74,8 +74,8 @@ module Stacker
   end
   private :merge_and_validate
 
-  def validate_template(template)
-    cloud_formation.validate_template(template_body: template_body(template))
+  def validate_template(template, tags = nil)
+    cloud_formation.validate_template(template_body: template_body(template, tags))
   end
 
   def delete_stack(stack_name)
@@ -109,6 +109,10 @@ module Stacker
       raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
+  end
+
+  def get_template(stack_name)
+    cloud_formation.get_template(stack_name: stack_name).template_body
   end
 
   def find_stack(stack_name)
@@ -169,9 +173,9 @@ module Stacker
     @lazy_cloud_formation
   end
 
-  def template_body(template)
+  def template_body(template, tags = nil)
     template = File.read(template) if File.exists?(template)
-    AutoStacker24::Preprocessor.preprocess(template)
+    AutoStacker24::Preprocessor.preprocess(template, tags)
   end
 
   extend self
