@@ -92,6 +92,11 @@ def add_tags
          "Type": "UnsupportedType",
          "Properties": {
          }
+       },
+       "ASGType_ReturnsTagsWithPropagateAtLaunch" : {
+         "Type": "AWS::AutoScaling::AutoScalingGroup",
+         "Properties": {
+         }
        }
      }
    }
@@ -111,7 +116,7 @@ if $0 ==__FILE__ # placeholder for interactive testing
 
   #remove_comments
   #replace_variables
-  merge_tags
-  #add_tags
+  #merge_tags
+  add_tags
 
 end
