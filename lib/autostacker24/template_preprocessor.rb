@@ -5,12 +5,78 @@ module AutoStacker24
 
   module Preprocessor
 
-    def self.preprocess(template)
+    def self.preprocess(template, tags = nil)
       if template =~ /^\s*\/{2}\s*/i
         template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
-        template = preprocess_json(JSON(template)).to_json
+        template = preprocess_json(JSON(template))
+        template = preprocess_tags(template, tags).to_json
       end
       template
+    end
+
+    def self.preprocess_tags(template, tags = nil)
+
+      supportedTypes = [
+        'AWS::AutoScaling::AutoScalingGroup',
+        'AWS::CloudTrail::Trail',
+        'AWS::EC2::CustomerGateway',
+        'AWS::EC2::DHCPOptions',
+        'AWS::EC2::Instance',
+        'AWS::EC2::InternetGateway',
+        'AWS::EC2::NetworkAcl',
+        'AWS::EC2::NetworkInterface',
+        'AWS::EC2::RouteTable',
+        'AWS::EC2::SecurityGroup',
+        'AWS::EC2::Subnet',
+        'AWS::EC2::Volume',
+        'AWS::EC2::VPC',
+        'AWS::EC2::VPCPeeringConnection',
+        'AWS::EC2::VPNConnection',
+        'AWS::EC2::VPNGateway',
+        'AWS::ElasticBeanstalk::Environment',
+        'AWS::ElasticLoadBalancing::LoadBalancer',
+        'AWS::RDS::DBCluster',
+        'AWS::RDS::DBClusterParameterGroup',
+        'AWS::RDS::DBInstance',
+        'AWS::RDS::DBParameterGroup',
+        'AWS::RDS::DBSecurityGroup',
+        'AWS::RDS::DBSubnetGroup',
+        'AWS::RDS::OptionGroup',
+        'AWS::S3::Bucket'
+      ]
+
+      unless tags.nil?
+
+        tags_for_asg = adjust_tags_for_asg(tags)
+
+        template["Resources"].each {|(key, value)|
+
+          tags_to_apply = tags
+          if value["Type"] == 'AWS::AutoScaling::AutoScalingGroup'
+            tags_to_apply = tags_for_asg
+          end
+
+          if supportedTypes.include? value["Type"]
+            if value["Properties"]["Tags"].nil?
+              value["Properties"]["Tags"] = tags_to_apply
+            else
+              value["Properties"]["Tags"] = (tags_to_apply + value["Properties"]["Tags"]).uniq { |s| s.first }
+            end
+          end
+        }
+      end
+
+      template
+    end
+
+    def self.adjust_tags_for_asg(tags)
+      asg_tags = tags.inject([]) { |t,element| t << element.dup }
+
+      asg_tags.each {|(tag)|
+        tag["PropagateAtLaunch"] = "true"
+      }
+
+      asg_tags
     end
 
     def self.preprocess_json(json)

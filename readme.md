@@ -8,7 +8,7 @@ especially if you have lots of parameters or dependencies between other stacks.
 
 ## Create or Update
 ```ruby
-Stacker.create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil)
+Stacker.create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
 ```
 Creates or updates the stack depending if it exists or not.
 It will also wait until the stack operation is eventually finished, handling all status checks for you.
@@ -20,6 +20,7 @@ It will also wait until the stack operation is eventually finished, handling all
   - `parent_stack_name`: this special feature will read the output parameters of an existing stack and
     merge them to the given parameters. Therefore the new stack can easily reference resources
     (e.g. VPC Ids or Security Groups) from a parent stack.
+  - `tags`: Key-value pairs to associate with this stack. As CloudFormation [does not support updating tags](http://docs.aws.amazon.com/cli/latest/reference/cloudformation/update-stack.html) AutoStacker24 is injecting the tags to all  `Resources` elements which support it.
 
 Example:
 
@@ -30,7 +31,11 @@ params = {
   AmiId:           "ami-4711"
 }
 
-Stacker.create_or_update_stack('my-stack, 'service-stack.json', params)
+tags = [
+  { "Key": "Team", "Value": "Kondor"}
+]
+
+Stacker.create_or_update_stack('my-stack', 'service-stack.json', params, tags)
 ```
 
 For finer control Stacker offers also
@@ -45,7 +50,7 @@ For finer control Stacker offers also
 
 ## Template Preprocessing
 
-1. You can put javascript like comments in jour template, even if they are are illegal in pure json.
+1. You can put javascript like comments in your template, even if they are are illegal in pure json.
    Nevertheless, sometimes it's just handy to have the ability to quickly comment some parts out.
    AutoStacker24 will remove all comments before passing the template to AWS.
 

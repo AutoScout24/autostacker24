@@ -36,6 +36,78 @@ def replace_variables
    puts Stacker.template_body(template)
 end
 
+
+def merge_tags
+  template = <<-EOF
+   // AutoStacker24
+   {
+     "Resources" : {
+       "Loadbalancer" : {
+         "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+         "SomethingElse": {
+           "x": "y"
+         },
+         "Properties": {
+           "Tags" : [
+             {"Key" : "Environment", "Value" : "@AWS::StackName","PropagateAtLaunch": "true" }
+           ]
+         }
+       }
+     }
+   }
+   EOF
+
+   puts Stacker.template_body(template, [{"Key": "MyKey", "Value": "MyValue"}])
+   puts Stacker.template_body(template, [{"Key"=> "MyKey", "Value" => "MyValue"}])
+end
+
+def add_tags
+  template = <<-EOF
+   // AutoStacker24
+   {
+     "Resources" : {
+       "supportedTypeNoTags_returnsTwoTags" : {
+         "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+         "Properties": {
+         }
+       },
+       "supportedTypeNonConflictingTags_returnsThreeTags" : {
+         "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+         "Properties": {
+           "Tags" : [
+             {"Key" : "UniqueKey", "Value" : "SomeValue"}
+           ]
+         }
+       },
+       "supportedTypeTwoConflictingTags_ReturnsThreeTagsOverwritten" : {
+         "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+         "Properties": {
+           "Tags" : [
+             {"Key" : "Team", "Value" : "Old"},
+             {"Key" : "Service", "Value" : "Dashing"}
+           ]
+         }
+       },
+       "unsupportedType_ReturnsNoTags" : {
+         "Type": "UnsupportedType",
+         "Properties": {
+         }
+       },
+       "ASGType_ReturnsTagsWithPropagateAtLaunch" : {
+         "Type": "AWS::AutoScaling::AutoScalingGroup",
+         "Properties": {
+         }
+       }
+     }
+   }
+   EOF
+
+   tags = [{"Key" => "Team", "Value" => "Kondor"}, {"Key" => "Team2", "Value" => "Kondor2"}]
+  #  puts AutoStacker24::Preprocessor.tokenize('content').inspect
+  #  puts AutoStacker24::Preprocessor.tokenize('bla @@@var2 @bla2 xyz').inspect
+   puts Stacker.template_body(template, tags)
+end
+
 if $0 ==__FILE__ # placeholder for interactive testing
   $stderr.sync=true
   $stdout.sync=true
@@ -43,6 +115,8 @@ if $0 ==__FILE__ # placeholder for interactive testing
   #OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE # Windows Hack
 
   #remove_comments
-  replace_variables
+  #replace_variables
+  #merge_tags
+  add_tags
 
 end
