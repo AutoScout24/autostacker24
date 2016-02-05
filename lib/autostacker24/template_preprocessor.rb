@@ -1,5 +1,6 @@
 
 require 'json'
+require 'set'
 
 module AutoStacker24
 
@@ -14,36 +15,9 @@ module AutoStacker24
       template
     end
 
-    def self.preprocess_tags(template, tags = nil)
+    SUPPORTED_TYPES = Set[%w(AWS::AutoScaling::AutoScalingGroup AWS::CloudTrail::Trail AWS::EC2::CustomerGateway AWS::EC2::DHCPOptions AWS::EC2::Instance AWS::EC2::InternetGateway AWS::EC2::NetworkAcl AWS::EC2::NetworkInterface AWS::EC2::RouteTable AWS::EC2::SecurityGroup AWS::EC2::Subnet AWS::EC2::Volume AWS::EC2::VPC AWS::EC2::VPCPeeringConnection AWS::EC2::VPNConnection AWS::EC2::VPNGateway AWS::ElasticBeanstalk::Environment AWS::ElasticLoadBalancing::LoadBalancer AWS::RDS::DBCluster AWS::RDS::DBClusterParameterGroup AWS::RDS::DBInstance AWS::RDS::DBParameterGroup AWS::RDS::DBSecurityGroup AWS::RDS::DBSubnetGroup AWS::RDS::OptionGroup AWS::S3::Bucket)]
 
-      supportedTypes = [
-        'AWS::AutoScaling::AutoScalingGroup',
-        'AWS::CloudTrail::Trail',
-        'AWS::EC2::CustomerGateway',
-        'AWS::EC2::DHCPOptions',
-        'AWS::EC2::Instance',
-        'AWS::EC2::InternetGateway',
-        'AWS::EC2::NetworkAcl',
-        'AWS::EC2::NetworkInterface',
-        'AWS::EC2::RouteTable',
-        'AWS::EC2::SecurityGroup',
-        'AWS::EC2::Subnet',
-        'AWS::EC2::Volume',
-        'AWS::EC2::VPC',
-        'AWS::EC2::VPCPeeringConnection',
-        'AWS::EC2::VPNConnection',
-        'AWS::EC2::VPNGateway',
-        'AWS::ElasticBeanstalk::Environment',
-        'AWS::ElasticLoadBalancing::LoadBalancer',
-        'AWS::RDS::DBCluster',
-        'AWS::RDS::DBClusterParameterGroup',
-        'AWS::RDS::DBInstance',
-        'AWS::RDS::DBParameterGroup',
-        'AWS::RDS::DBSecurityGroup',
-        'AWS::RDS::DBSubnetGroup',
-        'AWS::RDS::OptionGroup',
-        'AWS::S3::Bucket'
-      ]
+    def self.preprocess_tags(template, tags = nil)
 
       unless tags.nil?
 
@@ -56,7 +30,7 @@ module AutoStacker24
             tags_to_apply = tags_for_asg
           end
 
-          if supportedTypes.include? value["Type"]
+          if SUPPORTED_TYPES.include? value["Type"]
             if value["Properties"]["Tags"].nil?
               value["Properties"]["Tags"] = tags_to_apply
             else
