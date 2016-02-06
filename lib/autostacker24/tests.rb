@@ -57,7 +57,6 @@ def merge_tags
    }
    EOF
 
-   puts Stacker.template_body(template, [{"Key": "MyKey", "Value": "MyValue"}])
    puts Stacker.template_body(template, [{"Key"=> "MyKey", "Value" => "MyValue"}])
 end
 
