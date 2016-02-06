@@ -75,7 +75,7 @@ def merge_tags
    }
    EOF
 
-   puts Stacker.template_body(template, [{"Key"=> "MyKey", "Value" => "MyValue"}])
+   puts Stacker.template_body(template, [{'Key' => 'MyKey', 'Value' => 'MyValue'}])
 end
 
 def add_tags
@@ -119,9 +119,7 @@ def add_tags
    }
    EOF
 
-   tags = [{"Key" => "Team", "Value" => "Kondor"}, {"Key" => "Team2", "Value" => "Kondor2"}]
-  #  puts AutoStacker24::Preprocessor.tokenize('content').inspect
-  #  puts AutoStacker24::Preprocessor.tokenize('bla @@@var2 @bla2 xyz').inspect
+   tags = [{'Key' => 'Team', 'Value' => 'Kondor'}, {'Key' => 'Team2', 'Value' => 'Kondor2'}]
    puts Stacker.template_body(template, tags)
 end
 
@@ -131,10 +129,10 @@ if $0 ==__FILE__ # placeholder for interactive testing
 
   #OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE # Windows Hack
 
-  #remove_comments
-  #replace_variables
-  #merge_tags
-  #add_tags
+  remove_comments
+  replace_variables
+  merge_tags
+  add_tags
   user_data
 
 end

@@ -23,18 +23,18 @@ module AutoStacker24
 
         tags_for_asg = adjust_tags_for_asg(tags)
 
-        template["Resources"].each {|(key, value)|
+        template['Resources'].each {|(key, value)|
 
           tags_to_apply = tags
-          if value["Type"] == 'AWS::AutoScaling::AutoScalingGroup'
+          if value['Type'] == 'AWS::AutoScaling::AutoScalingGroup'
             tags_to_apply = tags_for_asg
           end
 
-          if SUPPORTED_TYPES.include? value["Type"]
-            if value["Properties"]["Tags"].nil?
-              value["Properties"]["Tags"] = tags_to_apply
+          if SUPPORTED_TYPES.include? value['Type']
+            if value['Properties']['Tags'].nil?
+              value['Properties']['Tags'] = tags_to_apply
             else
-              value["Properties"]["Tags"] = (tags_to_apply + value["Properties"]["Tags"]).uniq { |s| s.first }
+              value['Properties']['Tags'] = (tags_to_apply + value['Properties']['Tags']).uniq { |s| s.first }
             end
           end
         }
@@ -44,13 +44,7 @@ module AutoStacker24
     end
 
     def self.adjust_tags_for_asg(tags)
-      asg_tags = tags.inject([]) { |t,element| t << element.dup }
-
-      asg_tags.each {|(tag)|
-        tag["PropagateAtLaunch"] = "true"
-      }
-
-      asg_tags
+      tags.inject([]) { |t,element| t << element.dup.merge('PropagateAtLaunch' => 'true') }
     end
 
     def self.preprocess_json(json)
