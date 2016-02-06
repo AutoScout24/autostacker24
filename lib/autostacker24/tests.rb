@@ -36,6 +36,24 @@ def replace_variables
    puts Stacker.template_body(template)
 end
 
+def user_data
+  template = <<-EOF
+    // AutoStacker24
+    {
+      "Properties1": {
+        "UserData": "@file://../autostacker24.rb"
+      },
+      "Properties2": {
+        "UserData": "auto encode"
+      },
+      "Properties3": {
+        "UserData": {"Fn::Base64": "#!/bin/bash"}
+      }
+    }
+  EOF
+
+  puts Stacker.template_body(template)
+end
 
 def merge_tags
   template = <<-EOF
@@ -57,7 +75,6 @@ def merge_tags
    }
    EOF
 
-   puts Stacker.template_body(template, [{"Key": "MyKey", "Value": "MyValue"}])
    puts Stacker.template_body(template, [{"Key"=> "MyKey", "Value" => "MyValue"}])
 end
 
@@ -117,6 +134,7 @@ if $0 ==__FILE__ # placeholder for interactive testing
   #remove_comments
   #replace_variables
   #merge_tags
-  add_tags
+  #add_tags
+  user_data
 
 end

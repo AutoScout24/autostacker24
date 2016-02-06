@@ -55,7 +55,13 @@ module AutoStacker24
 
     def self.preprocess_json(json)
       if json.is_a?(Hash)
-        json.inject({}){|m, (k, v)| m.merge(k => preprocess_json(v))}
+        json.inject({}) do |m, (k, v)|
+          if k == 'UserData' && v.is_a?(String)
+            m.merge(k => preprocess_user_data(v))
+          else
+            m.merge(k => preprocess_json(v))
+          end
+        end
       elsif json.is_a?(Array)
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
@@ -63,6 +69,12 @@ module AutoStacker24
       else
         json
       end
+    end
+
+    def self.preprocess_user_data(s)
+      m = /^@file:\/\/(.*)/.match(s)
+      s = File.read(m[1]) if m
+      {'Fn::Base64' => s}
     end
 
     def self.preprocess_string(s)

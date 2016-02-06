@@ -2,7 +2,7 @@
 
 AutoStacker24 is a small ruby module for managing AWS CloudFormation stacks.
 
-In comparision to the original [AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html)
+In comparison to the original [AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html)
 AutoStacker 24 lets you write simple and convenient automation scripts,
 especially if you have lots of parameters or dependencies between other stacks.
 
@@ -58,11 +58,15 @@ For finer control Stacker offers also
    long strings. AutoStacker24 gives you a more convenient syntax: Inside a string, you can
    reference a parameter with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
 
+3. For the "UserData" property you can reference a file `@file://./myscript.sh` that gets
+   auto encoded to base64. If you pass a simple string that gets autoencoded.
+
   instead of  | just write
   ------------- | -------------
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
+  `"UserData": {"Fn:Base": ... }` | `"UserData": "@file://./myscript.sh"`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
 your template must start with a comment:
