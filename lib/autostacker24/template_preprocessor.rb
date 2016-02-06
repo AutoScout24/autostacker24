@@ -94,8 +94,6 @@ module AutoStacker24
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
         preprocess_string(json)
-      elsif json.is_a?(Fixnum) # workaround for issue https://github.com/flori/json/issues/269
-        json.to_f
       else
         json
       end
