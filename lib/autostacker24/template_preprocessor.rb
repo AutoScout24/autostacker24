@@ -44,7 +44,7 @@ module AutoStacker24
     end
 
     def self.adjust_tags_for_asg(tags)
-      tags.inject([]) { |t,element| t << element.dup.merge('PropagateAtLaunch' => 'true') }
+      tags.map {|element| element.merge('PropagateAtLaunch' => 'true') }
     end
 
     def self.preprocess_json(json)
