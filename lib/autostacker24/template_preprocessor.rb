@@ -7,11 +7,19 @@ module AutoStacker24
 
     def self.preprocess(template, tags = nil)
       if template =~ /^\s*\/{2}\s*/i
-        template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
-        template = preprocess_json(JSON(template))
-        template = preprocess_tags(template, tags).to_json
+        processed = preprocess_json(parse_json(template))
+        template = preprocess_tags(processed, tags).to_json
       end
       template
+    end
+
+    def self.parse_json(template)
+      template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
+      JSON(template)
+    rescue JSON::ParserError => e
+      require 'json/pure' # pure ruby parser has better error diagnostics
+      JSON(template)
+      raise e
     end
 
     def self.preprocess_tags(template, tags = nil)
@@ -86,6 +94,8 @@ module AutoStacker24
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
         preprocess_string(json)
+      elsif json.is_a?(Fixnum) # workaround for issue https://github.com/flori/json/issues/269
+        json.to_f
       else
         json
       end
