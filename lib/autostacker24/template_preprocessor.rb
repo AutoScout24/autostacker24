@@ -8,14 +8,22 @@ module AutoStacker24
 
     def self.preprocess(template, tags = nil)
       if template =~ /^\s*\/{2}\s*/i
-        template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
-        template = preprocess_json(JSON(template))
-        template = preprocess_tags(template, tags).to_json
+        processed = preprocess_json(parse_json(template))
+        template = preprocess_tags(processed, tags).to_json
       end
       template
     end
 
     SUPPORTED_TYPES = Set[%w(AWS::AutoScaling::AutoScalingGroup AWS::CloudTrail::Trail AWS::EC2::CustomerGateway AWS::EC2::DHCPOptions AWS::EC2::Instance AWS::EC2::InternetGateway AWS::EC2::NetworkAcl AWS::EC2::NetworkInterface AWS::EC2::RouteTable AWS::EC2::SecurityGroup AWS::EC2::Subnet AWS::EC2::Volume AWS::EC2::VPC AWS::EC2::VPCPeeringConnection AWS::EC2::VPNConnection AWS::EC2::VPNGateway AWS::ElasticBeanstalk::Environment AWS::ElasticLoadBalancing::LoadBalancer AWS::RDS::DBCluster AWS::RDS::DBClusterParameterGroup AWS::RDS::DBInstance AWS::RDS::DBParameterGroup AWS::RDS::DBSecurityGroup AWS::RDS::DBSubnetGroup AWS::RDS::OptionGroup AWS::S3::Bucket)]
+
+    def self.parse_json(template)
+      template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
+      JSON(template)
+    rescue JSON::ParserError => e
+      require 'json/pure' # pure ruby parser has better error diagnostics
+      JSON(template)
+      raise e
+    end
 
     def self.preprocess_tags(template, tags = nil)
 
