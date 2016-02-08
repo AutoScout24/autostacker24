@@ -1,5 +1,6 @@
 
 require 'json'
+require 'set'
 
 module AutoStacker24
 
@@ -14,53 +15,26 @@ module AutoStacker24
       template
     end
 
-    def self.preprocess_tags(template, tags = nil)
+    SUPPORTED_TYPES = Set[%w(AWS::AutoScaling::AutoScalingGroup AWS::CloudTrail::Trail AWS::EC2::CustomerGateway AWS::EC2::DHCPOptions AWS::EC2::Instance AWS::EC2::InternetGateway AWS::EC2::NetworkAcl AWS::EC2::NetworkInterface AWS::EC2::RouteTable AWS::EC2::SecurityGroup AWS::EC2::Subnet AWS::EC2::Volume AWS::EC2::VPC AWS::EC2::VPCPeeringConnection AWS::EC2::VPNConnection AWS::EC2::VPNGateway AWS::ElasticBeanstalk::Environment AWS::ElasticLoadBalancing::LoadBalancer AWS::RDS::DBCluster AWS::RDS::DBClusterParameterGroup AWS::RDS::DBInstance AWS::RDS::DBParameterGroup AWS::RDS::DBSecurityGroup AWS::RDS::DBSubnetGroup AWS::RDS::OptionGroup AWS::S3::Bucket)]
 
-      supportedTypes = [
-        'AWS::AutoScaling::AutoScalingGroup',
-        'AWS::CloudTrail::Trail',
-        'AWS::EC2::CustomerGateway',
-        'AWS::EC2::DHCPOptions',
-        'AWS::EC2::Instance',
-        'AWS::EC2::InternetGateway',
-        'AWS::EC2::NetworkAcl',
-        'AWS::EC2::NetworkInterface',
-        'AWS::EC2::RouteTable',
-        'AWS::EC2::SecurityGroup',
-        'AWS::EC2::Subnet',
-        'AWS::EC2::Volume',
-        'AWS::EC2::VPC',
-        'AWS::EC2::VPCPeeringConnection',
-        'AWS::EC2::VPNConnection',
-        'AWS::EC2::VPNGateway',
-        'AWS::ElasticBeanstalk::Environment',
-        'AWS::ElasticLoadBalancing::LoadBalancer',
-        'AWS::RDS::DBCluster',
-        'AWS::RDS::DBClusterParameterGroup',
-        'AWS::RDS::DBInstance',
-        'AWS::RDS::DBParameterGroup',
-        'AWS::RDS::DBSecurityGroup',
-        'AWS::RDS::DBSubnetGroup',
-        'AWS::RDS::OptionGroup',
-        'AWS::S3::Bucket'
-      ]
+    def self.preprocess_tags(template, tags = nil)
 
       unless tags.nil?
 
         tags_for_asg = adjust_tags_for_asg(tags)
 
-        template["Resources"].each {|(key, value)|
+        template['Resources'].each {|(key, value)|
 
           tags_to_apply = tags
-          if value["Type"] == 'AWS::AutoScaling::AutoScalingGroup'
+          if value['Type'] == 'AWS::AutoScaling::AutoScalingGroup'
             tags_to_apply = tags_for_asg
           end
 
-          if supportedTypes.include? value["Type"]
-            if value["Properties"]["Tags"].nil?
-              value["Properties"]["Tags"] = tags_to_apply
+          if SUPPORTED_TYPES.include? value['Type']
+            if value['Properties']['Tags'].nil?
+              value['Properties']['Tags'] = tags_to_apply
             else
-              value["Properties"]["Tags"] = (tags_to_apply + value["Properties"]["Tags"]).uniq { |s| s.first }
+              value['Properties']['Tags'] = (tags_to_apply + value['Properties']['Tags']).uniq { |s| s.first }
             end
           end
         }
@@ -70,18 +44,18 @@ module AutoStacker24
     end
 
     def self.adjust_tags_for_asg(tags)
-      asg_tags = tags.inject([]) { |t,element| t << element.dup }
-
-      asg_tags.each {|(tag)|
-        tag["PropagateAtLaunch"] = "true"
-      }
-
-      asg_tags
+      tags.map {|element| element.merge('PropagateAtLaunch' => 'true') }
     end
 
     def self.preprocess_json(json)
       if json.is_a?(Hash)
-        json.inject({}){|m, (k, v)| m.merge(k => preprocess_json(v))}
+        json.inject({}) do |m, (k, v)|
+          if k == 'UserData' && v.is_a?(String)
+            m.merge(k => preprocess_user_data(v))
+          else
+            m.merge(k => preprocess_json(v))
+          end
+        end
       elsif json.is_a?(Array)
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
@@ -89,6 +63,12 @@ module AutoStacker24
       else
         json
       end
+    end
+
+    def self.preprocess_user_data(s)
+      m = /^@file:\/\/(.*)/.match(s)
+      s = File.read(m[1]) if m
+      {'Fn::Base64' => s}
     end
 
     def self.preprocess_string(s)
