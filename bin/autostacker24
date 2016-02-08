@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'autostacker24'
+
+def parse_options(argv)
+  params = {}
+  parser = OptionParser.new
+  parser.on("--template VALUE", "template location") do |value|
+    params[:template] = value 
+  end
+  parser.parse(argv)
+  return params
+end
+
+command = ARGV[0]
+params = parse_options(ARGV)
+
+if command == "validate"
+  Stacker.validate_template(params[:template])
+elsif command == "preprocess"
+  puts Stacker.template_body(params[:template])
+else
+  raise ArgumentError, "unknown command"
+end

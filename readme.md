@@ -87,3 +87,20 @@ Use it in your rakefile or Ruby code:
 ```ruby
 require 'autostacker24'
 ```
+
+### CLI
+
+You can also use AutoStacker24 in your command line.
+
+To Validate a template:
+
+
+```
+$ autostacker24 validate --template /path/to/template.json
+```
+
+To see the outcome after AutoStacker preprocessed your template;
+
+```
+$ autostacker24 preprocess --template /path/to/template.json
+```
