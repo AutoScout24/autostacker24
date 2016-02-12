@@ -1,0 +1,10 @@
+AllCops:
+  Include:
+    - 'spec/**/*.rb'
+    - 'lib/**/*.rb'
+    - 'bin/**/*.rb'
+  Exclude:
+    - 'vendor/**/*'
+
+Metrics/LineLength:
+  Max: 120

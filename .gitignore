@@ -1,4 +1,5 @@
 *.gem
 .bundle
 .idea
-
+vendor
+Gemfile.lock
