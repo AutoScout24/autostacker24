@@ -6,6 +6,9 @@ In comparison to the original [AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubyS
 AutoStacker 24 lets you write simple and convenient automation scripts,
 especially if you have lots of parameters or dependencies between other stacks.
 
+## Status
+[![Build Status](https://travis-ci.org/AutoScout24/autostacker.svg)](https://travis-ci.org/AutoScout24/autostacker)
+
 ## Create or Update
 ```ruby
 Stacker.create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
