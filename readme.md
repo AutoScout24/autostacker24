@@ -7,7 +7,7 @@ AutoStacker 24 lets you write simple and convenient automation scripts,
 especially if you have lots of parameters or dependencies between other stacks.
 
 ## Status
-[![Build Status](https://travis-ci.org/AutoScout24/autostacker.svg)](https://travis-ci.org/AutoScout24/autostacker)
+[![Build Status](https://travis-ci.org/AutoScout24/autostacker24.svg)](https://travis-ci.org/AutoScout24/autostacker24)
 
 ## Create or Update
 ```ruby
