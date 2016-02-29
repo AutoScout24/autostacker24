@@ -33,10 +33,11 @@ module Stacker
   def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body(template, tags),
+                                 template_body: template_body(template),
                                  on_failure:    'DELETE',
                                  parameters:    transform_input(parameters),
-                                 capabilities:  ['CAPABILITY_IAM'])
+                                 capabilities:  ['CAPABILITY_IAM'],
+                                 tags:          tags)
     wait_for_stack(stack_name, :create)
   end
 
@@ -45,9 +46,10 @@ module Stacker
     begin
       merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
-                                   template_body: template_body(template, tags),
+                                   template_body: template_body(template),
                                    parameters:    transform_input(parameters),
-                                   capabilities:  ['CAPABILITY_IAM'])
+                                   capabilities:  ['CAPABILITY_IAM'],
+                                   tags:          tags)
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       find_stack(stack_name)
@@ -74,8 +76,8 @@ module Stacker
   end
   private :merge_and_validate
 
-  def validate_template(template, tags = nil)
-    cloud_formation.validate_template(template_body: template_body(template, tags))
+  def validate_template(template)
+    cloud_formation.validate_template(template_body: template_body(template))
   end
 
   def delete_stack(stack_name)
@@ -173,9 +175,9 @@ module Stacker
     @lazy_cloud_formation
   end
 
-  def template_body(template, tags = nil)
+  def template_body(template)
     template = File.read(template) if File.exists?(template)
-    AutoStacker24::Preprocessor.preprocess(template, tags)
+    AutoStacker24::Preprocessor.preprocess(template)
   end
 
   extend self

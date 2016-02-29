@@ -6,15 +6,12 @@ module AutoStacker24
 
   module Preprocessor
 
-    def self.preprocess(template, tags = nil)
+    def self.preprocess(template)
       if template =~ /^\s*\/{2}\s*/i
-        processed = preprocess_json(parse_json(template))
-        template = preprocess_tags(processed, tags).to_json
+        template = preprocess_json(parse_json(template)).to_json
       end
       template
     end
-
-    SUPPORTED_TYPES = Set[%w(AWS::AutoScaling::AutoScalingGroup AWS::CloudTrail::Trail AWS::EC2::CustomerGateway AWS::EC2::DHCPOptions AWS::EC2::Instance AWS::EC2::InternetGateway AWS::EC2::NetworkAcl AWS::EC2::NetworkInterface AWS::EC2::RouteTable AWS::EC2::SecurityGroup AWS::EC2::Subnet AWS::EC2::Volume AWS::EC2::VPC AWS::EC2::VPCPeeringConnection AWS::EC2::VPNConnection AWS::EC2::VPNGateway AWS::ElasticBeanstalk::Environment AWS::ElasticLoadBalancing::LoadBalancer AWS::RDS::DBCluster AWS::RDS::DBClusterParameterGroup AWS::RDS::DBInstance AWS::RDS::DBParameterGroup AWS::RDS::DBSecurityGroup AWS::RDS::DBSubnetGroup AWS::RDS::OptionGroup AWS::S3::Bucket)]
 
     def self.parse_json(template)
       template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
@@ -23,36 +20,6 @@ module AutoStacker24
       require 'json/pure' # pure ruby parser has better error diagnostics
       JSON(template)
       raise e
-    end
-
-    def self.preprocess_tags(template, tags = nil)
-
-      unless tags.nil?
-
-        tags_for_asg = adjust_tags_for_asg(tags)
-
-        template['Resources'].each {|(key, value)|
-
-          tags_to_apply = tags
-          if value['Type'] == 'AWS::AutoScaling::AutoScalingGroup'
-            tags_to_apply = tags_for_asg
-          end
-
-          if SUPPORTED_TYPES.include? value['Type']
-            if value['Properties']['Tags'].nil?
-              value['Properties']['Tags'] = tags_to_apply
-            else
-              value['Properties']['Tags'] = (tags_to_apply + value['Properties']['Tags']).uniq { |s| s.first }
-            end
-          end
-        }
-      end
-
-      template
-    end
-
-    def self.adjust_tags_for_asg(tags)
-      tags.map {|element| element.merge('PropagateAtLaunch' => 'true') }
     end
 
     def self.preprocess_json(json)
