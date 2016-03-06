@@ -9,7 +9,10 @@ RSpec.describe 'Stacker Template Processing' do
       "bla": "bla", //comment
       "fasel": "//no comment",
       "blub": // still a "comment"
-      "some string", // comment
+      "some string" // comment
+      /*
+        a longer multiline comment
+      */ ,
       "single": "@var1",
       "embedded": "bla @var2 @bla2",
       "array": ["@var2", "@var3"],
