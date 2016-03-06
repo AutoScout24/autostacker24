@@ -78,10 +78,15 @@ module AutoStacker24
       m1 = m[1]
       m2 = m[3]
       m3 = m[5]
-      if m3
-        {'Fn::FindInMap' => [m1, preprocess_string(m2), m3]}
-      elsif m2
-        {'Fn::FindInMap' => [m1 + 'Map', preprocess_string('@' + m1), m2]}
+      if m2
+        args = if m3
+                  [m1, m2, m3]
+               elsif m1 =~ /Map$/
+                 [m1, '@' + m1[0..-4], m2]
+               else
+                 [m1 + 'Map', '@' + m1, m2]
+               end
+        {'Fn::FindInMap' => [args[0], preprocess_string(args[1]), preprocess_string(args[2])]}
       else
         {'Ref' => m1}
       end
