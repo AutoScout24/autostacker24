@@ -14,7 +14,6 @@ module AutoStacker24
     end
 
     def self.parse_json(template)
-      template = template.gsub(/(\s*\/\/.*$)|(".*")/) {|m| m[0] == '"' ? m : ''} # replace comments
       JSON(template)
     rescue JSON::ParserError => e
       require 'json/pure' # pure ruby parser has better error diagnostics
