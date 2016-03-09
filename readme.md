@@ -79,7 +79,7 @@ By default, AutoStacker24 don't preprocess templates. If you want to use this fu
 your template must start with a comment:
 
 ```javascript
-// AutoStacker24 -x:MapConvention
+// AutoStacker24
 {
   ...
 }
