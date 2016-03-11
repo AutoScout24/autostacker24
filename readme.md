@@ -64,12 +64,16 @@ For finer control Stacker offers also
 3. For the "UserData" property you can reference a file `@file://./myscript.sh` that gets
    auto encoded to base64. If you pass a simple string that gets autoencoded.
 
+4. Instead of using Fn::FindInMap you can do something like `@EnvironmentMap[@Environment, Key]`
+
   instead of  | just write
   ------------- | -------------
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
-  `"UserData": {"Fn:Base": ... }` | `"UserData": "@file://./myscript.sh"`
+  `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
+  `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
+
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
 your template must start with a comment:

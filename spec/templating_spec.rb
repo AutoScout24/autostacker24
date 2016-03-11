@@ -25,12 +25,24 @@ RSpec.describe 'Stacker Template Processing' do
       },
       "already_encoded": {
         "UserData": {"Fn::Base64": "#!/bin/bash"}
-      }
+      },
+      "find_in_map": "@EnvMap[@Env, Key]",
+      "find_in_map_convention": "@Env[Key]"
     }
     EOL
   end
 
   subject(:parsed_template) { JSON.parse(Stacker.template_body(template)) }
+
+  it 'generates Fn:FindInMap elements' do
+    expected = { 'Fn::FindInMap' => ['EnvMap', { 'Ref' => 'Env' }, 'Key'] }
+    expect(parsed_template['find_in_map']).to eq(expected)
+  end
+
+  it 'generates Fn:FindInMap elements by convention' do
+    expected = { 'Fn::FindInMap' => ['EnvMap', { 'Ref' => 'Env' }, 'Key'] }
+    expect(parsed_template['find_in_map_convention']).to eq(expected)
+  end
 
   it 'removes any comments into valid json' do
     begin

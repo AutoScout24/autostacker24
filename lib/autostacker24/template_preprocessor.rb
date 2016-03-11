@@ -49,7 +49,8 @@ module AutoStacker24
       parts = tokenize(s).map do |token|
         case token
           when '@@' then '@'
-          when /^@/ then {'Ref' => token[1..-1]}
+          when '@[' then '['
+          when /^@/ then parse_ref(token)
           else token
         end
       end
@@ -71,8 +72,28 @@ module AutoStacker24
       end
     end
 
+    def self.parse_ref(token)
+      m = /^@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
+      m1 = m[1]
+      m2 = m[3]
+      m3 = m[5]
+      if m2
+        args = if m3
+                  [m1, m2, m3]
+               else
+                 [m1 + 'Map', '@' + m1, m2]
+               end
+        {'Fn::FindInMap' => [args[0], preprocess_string(args[1]), preprocess_string(args[2])]}
+      else
+        {'Ref' => m1}
+      end
+    end
+
     def self.tokenize(s)
-      pattern = /@@|@((\w+(::)?\w+)+)/
+      # for recursive bracket matching see
+      # http://stackoverflow.com/questions/19486686/recursive-nested-matching-pairs-of-curly-braces-in-ruby-regex
+      # but for we limit ourself to one level to make things less complex
+      pattern = /@@|@\[|@(\w+(::\w+)?)(\[[^\]]*\])?/
       tokens = []
       loop do
         m = pattern.match(s)
