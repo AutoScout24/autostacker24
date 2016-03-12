@@ -1,16 +1,20 @@
 
 require 'json'
 require 'set'
+require 'yaml'
 
 module AutoStacker24
 
   module Preprocessor
 
     def self.preprocess(template)
-      if template =~ /^\s*\/{2}\s*/i
-        template = preprocess_json(parse_json(template)).to_json
+      if template =~ /\A\s*\{/
+        template
+      elsif template =~ /\A\s*\/{2}/
+        preprocess_json(parse_json(template)).to_json
+      else
+        preprocess_json(parse_yaml(template)).to_json
       end
-      template
     end
 
     def self.parse_json(template)
@@ -19,6 +23,10 @@ module AutoStacker24
       require 'json/pure' # pure ruby parser has better error diagnostics
       JSON(template)
       raise e
+    end
+
+    def self.parse_yaml(template)
+      YAML.load(template)
     end
 
     def self.preprocess_json(json)
