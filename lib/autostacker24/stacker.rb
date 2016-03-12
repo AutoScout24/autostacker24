@@ -63,6 +63,7 @@ module Stacker
   # finally, if mandatory parameters are missing, an error will be raised
   def merge_and_validate(template, parameters, stack_name)
     valid = validate_template(template).parameters
+    parameters = transform_parameters(parameters)
     if stack_name
       present = valid.map{|p| p.parameter_key.to_sym}
       get_stack_output(stack_name).each do |key, value|
@@ -147,6 +148,10 @@ module Stacker
     transform_output(stack.outputs).freeze
   end
 
+  def transform_parameters(parameters)
+    parameters.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
+  end
+
   def transform_output(output)
     output.inject({}) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
   end
@@ -162,7 +167,7 @@ module Stacker
   end
 
   def get_stack_events(stack_name_or_id)
-    events = cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
+    cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
   end
 
   def cloud_formation # lazy CloudFormation client
