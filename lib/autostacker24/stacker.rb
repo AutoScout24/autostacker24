@@ -52,6 +52,7 @@ module Stacker
                                    tags:          tags)
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
+      puts "stack #{stack_name} is already up to date"
       find_stack(stack_name)
     else
       wait_for_stack(stack_name, :update, seen_events)
