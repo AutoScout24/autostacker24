@@ -23,7 +23,7 @@ Parameters:
     Default: arn:aws:iam::1234567800:instance-profile/Service
   BastionSSH:
     Type: String
-    Default: sg-12345678
+    Default: sg-12345678 # You can put comments here
 Mappings:
   EnvironmentMap:
     Staging:
