@@ -1,10 +1,14 @@
 # AutoStacker24
 
-AutoStacker24 is a small ruby module for managing AWS CloudFormation stacks.
-
-In comparison to the original [AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html)
-AutoStacker 24 lets you write simple and convenient automation scripts,
-especially if you have lots of parameters or dependencies between other stacks.
+AutoStacker24 is a small ruby gem for managing AWS CloudFormation stacks.
+It is a thin wrapper around the
+[AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html).
+It lets you write simple and convenient automation scripts,
+especially if you have lots of parameters or dependencies between stacks.
+You can use it directly from Ruby code or as a command line tool.
+It enhances CloudFormation templates by parameter expansion in strings and
+it is even possible to write templates in [YAML](examples/yaml-stack.md) which is much friendlier
+to humans than JSON.
 
 ## Status
 [![Build Status](https://travis-ci.org/AutoScout24/autostacker24.svg)](https://travis-ci.org/AutoScout24/autostacker24)
@@ -53,36 +57,42 @@ For finer control Stacker offers also
 
 ## Template Preprocessing
 
-1. You can put javascript like comments in your template, even if they are are illegal in pure json.
-   Nevertheless, sometimes it's just handy to have the ability to quickly comment some parts out.
-   AutoStacker24 will remove all comments before passing the template to AWS.
+1. You can put javascript like comments in your template, even if they are are illegal in pure JSON. AutoStacker24 will remove all comments before passing the template to AWS.
 
-2. Referencing parameters in CloudFormation json can be quite cumbersome, especially if you build
-   long strings. AutoStacker24 gives you a more convenient syntax: Inside a string, you can
-   reference a parameter with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
+2. You can use YAML for writing your templates. [YAML](http://yaml.org/spec/1.2/spec.html) is a data serialization format that is structural identical with JSON but optimized for humans.
+It has support for comments and long embedded string documents which makes it is especially useful for embedded UserData.
+[Example](examples/yaml-stack.md)
 
-3. For the "UserData" property you can reference a file `@file://./myscript.sh` that gets
-   auto encoded to base64. If you pass a simple string that gets autoencoded.
+3. Referencing parameters and building strings is quite cumbersome in CloudFormation. AutoStacker24 gives you a more convenient syntax: Inside a string, you can reference one or more parameters with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
 
-4. Instead of using Fn::FindInMap you can do something like `@EnvironmentMap[@Environment, Key]`
+4. For the "UserData" property you can pass a simple string that gets  auto encoded to base64. This is especially useful for templates written in yaml. You can reference a file `@file://./myscript.sh` that will be read into a simple string.
 
-  instead of  | just write
-  ------------- | -------------
+5. Instead of using Fn::FindInMap you can do something like `@EnvironmentMap[@Environment, Key]`
+
+### Examples
+
+  instead of | just write
+  -- | --
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
   `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
   `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
 
-
-By default, AutoStacker24 don't preprocess templates. If you want to use this functionality
-your template must start with a comment:
+By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
 
 ```javascript
-// AutoStacker24
+// AutoStacker24 JSON
 {
+  "AWSTemplateFormatVersion": "2010-09-09"
   ...
 }
+```
+```yaml
+# AutoStacker24 YAML
+AWSTemplateFormatVersion: "2010-09-09"
+Description: My Stack
+...
 ```
 `Stacker.template_body(template)` will give you the result after preprocessing if you need it for other tools.
 
