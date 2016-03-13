@@ -5,7 +5,7 @@ It is a thin wrapper around the
 [AWS Ruby SDK](http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html).
 It lets you write simple and convenient automation scripts,
 especially if you have lots of parameters or dependencies between stacks.
-You can use it directly from Ruby code or as a command line tool.
+You can use it directly from Ruby code or from the command line.
 It enhances CloudFormation templates by parameter expansion in strings and
 it is even possible to write templates in [YAML](examples/yaml-stack.md) which is much friendlier
 to humans than JSON.
@@ -120,7 +120,7 @@ To Validate a template:
 $ autostacker24 validate --template /path/to/template.json
 ```
 
-To see the outcome after AutoStacker preprocessed your template;
+To see the outcome after AutoStacker24 preprocessed your template;
 
 ```
 $ autostacker24 preprocess --template /path/to/template.json
