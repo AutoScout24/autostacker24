@@ -48,7 +48,7 @@ module AutoStacker24
     end
 
     def self.preprocess_user_data(s)
-      m = /^@file:\/\/(.*)/.match(s)
+      m = /\A@file:\/\/(.*)/.match(s)
       s = File.read(m[1]) if m
       {'Fn::Base64' => preprocess_string(s)}
     end
@@ -58,7 +58,7 @@ module AutoStacker24
         case token
           when '@@' then '@'
           when '@[' then '['
-          when /^@/ then parse_ref(token)
+          when /\A@/ then parse_ref(token)
           else token
         end
       end
@@ -81,7 +81,7 @@ module AutoStacker24
     end
 
     def self.parse_ref(token)
-      m = /^@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
+      m = /\A@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
       m1 = m[1]
       m2 = m[3]
       m3 = m[5]
