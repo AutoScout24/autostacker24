@@ -50,7 +50,7 @@ module AutoStacker24
     def self.preprocess_user_data(s)
       m = /^@file:\/\/(.*)/.match(s)
       s = File.read(m[1]) if m
-      {'Fn::Base64' => s}
+      {'Fn::Base64' => preprocess_string(s)}
     end
 
     def self.preprocess_string(s)
