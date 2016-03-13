@@ -19,31 +19,44 @@ RSpec.describe 'YAML to JSON' do
         Type: String
         Default: my-db
         Priority: 5
-    Data: |
+    Text: |
       some very long
       text splitted over
       lines
-    UserData: bla
+    StackName: "@AWS::StackName"
+    UserData: |
+      #!/bin/bash
+      echo "@Environment"
+      exit 42
     EOL
   end
 
-  subject(:parsed_template) do
+  subject(:parsed) do
     JSON.parse(Stacker.template_body(template))
   end
 
-  it 'can read strings' do
-    expect(parsed_template['Description']).to eq('My Stack')
+  it 'reads strings' do
+    expect(parsed['Description']).to eq('My Stack')
   end
 
-  it 'can read arrays' do
-    expect(parsed_template['Parameters']['Environment']['AllowedValues']).to eq(%w(Staging Production))
+  it 'reads arrays' do
+    expect(parsed['Parameters']['Environment']['AllowedValues']).to eq(%w(Staging Production))
   end
 
-  it 'can read integers' do
-    expect(parsed_template['Parameters']['DBName']['Priority']).to eq(5)
+  it 'reads integers' do
+    expect(parsed['Parameters']['DBName']['Priority']).to eq(5)
   end
 
-  it 'can read long text' do
-    expect(parsed_template['Data']).to eq("some very long\ntext splitted over\nlines\n")
+  it 'reads long strings' do
+    expect(parsed['Text']).to eq("some very long\ntext splitted over\nlines\n")
+  end
+
+  it 'expands parameters' do
+    expect(parsed['StackName']).to eq({'Ref' => 'AWS::StackName'})
+  end
+
+  it 'expands parameters inside long user data' do
+    user_data = {'Fn::Join' => ['', ["#!/bin/bash\necho \"", {'Ref' => 'Environment'}, "\"\nexit 42\n"]]}
+    expect(parsed['UserData']).to eq({'Fn::Base64' => user_data})
   end
 end
