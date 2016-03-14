@@ -48,6 +48,8 @@ end
 
 error("one command expected, found #{ARGV.size}") if ARGV.size != 1
 args.command = ARGV[0]
+args.params = args.params.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
+
 Stacker.region = args.region
 Stacker.credentials = Aws::SharedCredentials(profile_name: args.profile) if args.profile
 

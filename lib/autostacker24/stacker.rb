@@ -63,7 +63,6 @@ module Stacker
   # finally, if mandatory parameters are missing, an error will be raised
   def merge_and_validate(template, parameters, stack_name)
     valid = validate_template(template).parameters
-    parameters = transform_parameters(parameters)
     if stack_name
       present = valid.map{|p| p.parameter_key.to_sym}
       get_stack_output(stack_name).each do |key, value|
@@ -146,10 +145,6 @@ module Stacker
     stack = find_stack(stack_name)
     raise "stack #{stack_name} not found" unless stack
     transform_output(stack.outputs).freeze
-  end
-
-  def transform_parameters(parameters)
-    parameters.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
   end
 
   def transform_output(output)
