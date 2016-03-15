@@ -81,7 +81,8 @@ RSpec.describe 'Stacker Template Processing' do
   end
 
   it 'includes a user script with newlines' do
-    expect(parsed_template['file_include']['UserData']).to eq('Fn::Base64' => "#!/bin/bash\n\necho \"test\"\n")
+    user_data = {'Fn::Join' =>['', ["#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n"]]}
+    expect(parsed_template['file_include']['UserData']).to eq('Fn::Base64' => user_data)
   end
 
   it 'wraps userData in a Base64 encoded block' do

@@ -1,16 +1,20 @@
 
 require 'json'
 require 'set'
+require 'yaml'
 
 module AutoStacker24
 
   module Preprocessor
 
     def self.preprocess(template)
-      if template =~ /^\s*\/{2}\s*/i
-        template = preprocess_json(parse_json(template)).to_json
+      if template =~ /\A\s*\{/
+        template
+      elsif template =~ /\A\s*\/{2}/
+        preprocess_json(parse_json(template)).to_json
+      else
+        preprocess_json(parse_yaml(template)).to_json
       end
-      template
     end
 
     def self.parse_json(template)
@@ -19,6 +23,10 @@ module AutoStacker24
       require 'json/pure' # pure ruby parser has better error diagnostics
       JSON(template)
       raise e
+    end
+
+    def self.parse_yaml(template)
+      YAML.load(template)
     end
 
     def self.preprocess_json(json)
@@ -40,9 +48,9 @@ module AutoStacker24
     end
 
     def self.preprocess_user_data(s)
-      m = /^@file:\/\/(.*)/.match(s)
+      m = /\A@file:\/\/(.*)/.match(s)
       s = File.read(m[1]) if m
-      {'Fn::Base64' => s}
+      {'Fn::Base64' => preprocess_string(s)}
     end
 
     def self.preprocess_string(s)
@@ -50,7 +58,7 @@ module AutoStacker24
         case token
           when '@@' then '@'
           when '@[' then '['
-          when /^@/ then parse_ref(token)
+          when /\A@/ then parse_ref(token)
           else token
         end
       end
@@ -73,7 +81,7 @@ module AutoStacker24
     end
 
     def self.parse_ref(token)
-      m = /^@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
+      m = /\A@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
       m1 = m[1]
       m2 = m[3]
       m3 = m[5]
