@@ -72,7 +72,7 @@ It has support for comments and long embedded string documents which makes it is
 ### Examples
 
   instead of | just write
-  -- | --
+  ------------- | -------------
   `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
