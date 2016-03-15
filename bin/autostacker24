@@ -3,23 +3,71 @@
 require 'optparse'
 require 'autostacker24'
 
-def parse_options(argv)
-  params = {}
-  parser = OptionParser.new
-  parser.on("--template VALUE", "template location") do |value|
-    params[:template] = value 
-  end
-  parser.parse(argv)
-  return params
+def error(msg)
+  puts "\nError: #{msg}\n\n#{USAGE}"
+  exit 1
 end
 
-command = ARGV[0]
-params = parse_options(ARGV)
-
-if command == "validate"
-  Stacker.validate_template(params[:template])
-elsif command == "preprocess"
-  puts Stacker.template_body(params[:template])
-else
-  raise ArgumentError, "unknown command"
+def check_template(args)
+  error('--template missing or file not found') unless args.template && File.exists?(args.template)
 end
+
+def check_stack(args)
+  error('--stack name missing') unless args.stack
+end
+
+args = OpenStruct.new
+args.region = ENV['AWS_REGION']
+args.params = {}
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: autostacker24 command [options]'
+  opts.separator ''
+  opts.separator 'Commands:'
+  opts.separator "\tcreate\t\t create or update a stack"
+  opts.separator "\tdelete\t\t delete a stack"
+  opts.separator "\tpreprocess\t pretty print template after preprocessing"
+  opts.separator "\tvalidate\t validate the template"
+  opts.separator ''
+  opts.separator 'Options:'
+  opts.on('--template TEMPLATE', 'Path to template')                {|v| args.template = v}
+  opts.on('--stack STACK',       'Name of stack')                   {|v| args.stack = v}
+  opts.on('--parent PARENT',     'Name of parent stack')            {|v| args.parent = v}
+  opts.on('--region REGION',     'AWS region')                      {|v| args.region = v}
+  opts.on('--profile PROFILE',   'AWS profile (use aws configure)') {|v| args.profile = v}
+  opts.on('--param KEY=VALUE',   'Stack Parameter')                 {|v| args.params.store(*v.split('=')) }
+  opts.on('--help',              'Show this help')                  {|_| puts opts; exit!;}
+  opts.on('--version',           'Show version')                    {|_| puts `gem list autostacker24`; exit!;}
+end
+USAGE = parser.to_s
+
+begin
+  parser.parse!(ARGV)
+rescue OptionParser::ParseError => x
+  error(x)
+end
+
+error("one command expected, found #{ARGV.size}") if ARGV.size != 1
+args.command = ARGV[0]
+args.params = args.params.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
+
+Stacker.region = args.region
+Stacker.credentials = Aws::SharedCredentials(profile_name: args.profile) if args.profile
+
+case args.command
+  when /validate/
+    check_template(args)
+    Stacker.validate_template(args.template)
+  when /create|update|create_or_update/
+    check_template(args)
+    check_stack(args)
+    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent)
+  when /delete/
+    check_stack(args)
+    Stacker.delete_stack(args.stack)
+  when /preprocess|show/
+    check_template(args)
+    puts JSON.pretty_generate(JSON.parse(Stacker.template_body(args.template)))
+  else
+    error("unknown command '#{args.command}'")
+end
+

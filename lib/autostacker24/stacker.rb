@@ -163,7 +163,7 @@ module Stacker
   end
 
   def get_stack_events(stack_name_or_id)
-    events = cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
+    cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
   end
 
   def cloud_formation # lazy CloudFormation client
