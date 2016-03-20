@@ -1,4 +1,4 @@
-# autostacker24 CloudFormation YAML template
+# CloudFormation YAML template converted from https://s3-us-west-2.amazonaws.com/cloudformation-templates-us-west-2/AutoScalingScheduledAction.template
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CloudFormation Sample Template AutoScalingScheduledAction: Create
   a load balanced, Auto Scaled sample website. This example creates an Auto Scaling
