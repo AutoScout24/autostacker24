@@ -28,7 +28,7 @@ parser = OptionParser.new do |opts|
   opts.separator "\tdelete\t\t delete a stack"
   opts.separator "\tshow\t\t pretty print template after preprocessing"
   opts.separator "\tvalidate\t validate the template"
-  opts.separator "\tconvert\t\t converts a template to yaml"
+  opts.separator "\tconvert\t\t convert a template to yaml"
   opts.separator ''
   opts.separator 'Options:'
   opts.on('--template TEMPLATE', 'Path to template')                {|v| args.template = v}
