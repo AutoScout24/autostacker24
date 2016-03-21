@@ -48,12 +48,12 @@ module AutoStacker24
     end
 
     def self.preprocess_user_data(s)
-      m = /\A@file:\/\/(.*)/.match(s)
-      s = File.read(m[1]) if m
       {'Fn::Base64' => preprocess_string(s)}
     end
 
     def self.preprocess_string(s)
+      m = /^@file:\/\/(.*)$/.match(s)
+      s = File.read(m[1]) if m
       parts = tokenize(s).map do |token|
         case token
           when '@@' then '@'

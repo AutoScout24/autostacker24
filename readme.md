@@ -77,6 +77,7 @@ It has support for comments and long embedded string documents which makes it is
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
   `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
+  `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"`
   `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
