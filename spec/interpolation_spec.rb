@@ -51,4 +51,8 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('bla @Param-blub')).to eq({'Fn::Join' => ['',['bla ', {'Ref' => 'Param'}, '-blub']]} )
   end
 
+  it 'expression stops at "@"' do
+    expect(interpolate('@Param@::text')).to eq({'Fn::Join' => ['', [{'Ref' => 'Param'}, '::text']]} )
+  end
+
 end
