@@ -117,32 +117,20 @@ module AutoStacker24
       tokens
     end
 
-    # returns a string or a hash
+    # interpolates a string with '@' expressions and returns a string or a hash
     def self.interpolate(s)
-      #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
       parts = []
-      loop do
+      while s.length > 0
         raw, s = parse_raw(s)
         parts << raw if raw
         expr, s = parse_expr(s)
-        break unless expr
-        parts << expr
+        parts << expr if expr
       end
-      raise  "Interpolation incomplete: '#{s}'" unless s.length == 0
-
-      if parts.length == 1
-        parts.first
-      else # we need a join construct
-        {'Fn::Join' => ['', parts]}
+      case parts.length
+        when 0 then ''
+        when 1 then parts[0]
+        else {'Fn::Join' => ['', parts]}
       end
-    end
-
-    def self.replace_file(s)
-      s
-    end
-
-    def self.parse_expr(s)
-      return nil, s
     end
 
     def self.parse_raw(s)
@@ -150,13 +138,42 @@ module AutoStacker24
       loop do
         i = s.index('@', i + 1)
         return s, '' if i.nil?
-        return s[0..i], s[i..-1] unless '@:[.'.include?(s[i + 1])
-        s = s[0..i-1] + s[i+1..-1]
+        return s[0, i-1], s[i..-1] unless is_escape(s[i + 1])
+        #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
+        s = s[0, i] + s[i+1..-1]
       end
     end
 
-    def self.escape(s)
-      s[1] if '@:[.'.contains(s[1])
+    def self.is_escape(s)
+      '@:[.,]'.include?(s)
+    end
+
+    def self.parse_expr(s)
+      return nil, s if s.length == 0
+      m = /\A@(\w+(::\w+)?)/.match(s)
+      raise "Illegal expression #{s}" unless m
+      name = m[1]
+      s = m.post_match
+
+      return {'Ref' => name}, s
+
+      # a, s = parse_attr(s)
+      #
+      # if a.nil?
+      #   fk, sk, s = parse_map(s)
+      #   if fk.nil?
+      #      {}
+      #   end
+      # end
+      return nil, s
+    end
+
+    def self.parse_attr(s)
+      return nil, s
+    end
+
+    def self.parse_map(s)
+      return nil, s
     end
 
   end

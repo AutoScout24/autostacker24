@@ -31,9 +31,17 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('hullebulle@@bla.com')).to eq('hullebulle@bla.com')
   end
 
-  # it 'replaces Param' do
-  #   expect(interpolate('@Param')).to eq({'Ref' => 'Param'})
-  # end
+  it 'escapes AT everywhere' do
+    expect(interpolate('@@hullebulle@@bla.com@@')).to eq('@hullebulle@bla.com@')
+  end
+
+  it 'escapes ".[:" even if not strictly necessary' do
+    expect(interpolate('@.@[@: .[:')).to eq('.[: .[:')
+  end
+
+  it 'replaces Param' do
+    expect(interpolate('@Param')).to eq({'Ref' => 'Param'})
+  end
   #
   # it 'replaces AWS::Param' do
   #   expect(interpolate('@AWS::Param')).to eq({'Ref' => 'AWS::Param'})
