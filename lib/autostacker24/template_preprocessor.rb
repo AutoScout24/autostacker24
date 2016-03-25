@@ -158,29 +158,40 @@ module AutoStacker24
       attr, s = parse_attr(s)
       if attr
         return {'Fn::GetAtt' => [name, attr]}, s
+      else
+        map, s = parse_map(s)
+        return {'Fn::FindInMap' => [name, map[0], map[1]]}, s if map
       end
-
       return {'Ref' => name}, s
-
-      #
-      #
-      # if a.nil?
-      #   fk, sk, s = parse_map(s)
-      #   if fk.nil?
-      #      {}
-      #   end
-      # end
-      return nil, s
     end
 
     def self.parse_attr(s)
       m = /\A(\.\w+)+/.match(s)
       return nil, s unless m
-      return m.to_s[1..-1], m.post_match
+      return m[0][1..-1], m.post_match
     end
 
     def self.parse_map(s)
-      return nil, s
+      return nil, s unless s[0] == '['
+      top, s = parse_key(s[1..-1])
+      comma, s = parse_comma(s)
+      if comma
+        second, s = parse_key(s)
+      end
+      raise "Expected closing ] #{s}" unless s[0] == ']'
+      return [top, second], s[1..-1]
+    end
+
+    def self.parse_comma(s)
+      m = /\A\s*,\s*/.match(s)
+      return false, s unless m
+      return true, m.post_match
+    end
+
+    def self.parse_key(s)
+      m = /\A\s*(\w+)\s*/.match(s)
+      return nil, s unless m
+      return m[1], m.post_match
     end
 
   end
