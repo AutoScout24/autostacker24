@@ -2,6 +2,7 @@
 
 require 'optparse'
 require 'autostacker24'
+require 'yaml'
 
 def error(msg)
   puts "\nError: #{msg}\n\n#{USAGE}"
@@ -25,13 +26,15 @@ parser = OptionParser.new do |opts|
   opts.separator 'Commands:'
   opts.separator "\tcreate\t\t create or update a stack"
   opts.separator "\tdelete\t\t delete a stack"
-  opts.separator "\tpreprocess\t pretty print template after preprocessing"
+  opts.separator "\tshow\t\t pretty print template after preprocessing"
   opts.separator "\tvalidate\t validate the template"
+  opts.separator "\tconvert\t\t convert a template to yaml"
   opts.separator ''
   opts.separator 'Options:'
   opts.on('--template TEMPLATE', 'Path to template')                {|v| args.template = v}
   opts.on('--stack STACK',       'Name of stack')                   {|v| args.stack = v}
   opts.on('--parent PARENT',     'Name of parent stack')            {|v| args.parent = v}
+  opts.on('--to-json',           'Convert yaml template to json')   {|_| args.json = true}
   opts.on('--region REGION',     'AWS region')                      {|v| args.region = v}
   opts.on('--profile PROFILE',   'AWS profile (use aws configure)') {|v| args.profile = v}
   opts.on('--param KEY=VALUE',   'Stack Parameter')                 {|v| args.params.store(*v.split('=')) }
@@ -51,7 +54,7 @@ args.command = ARGV[0]
 args.params = args.params.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
 
 Stacker.region = args.region
-Stacker.credentials = Aws::SharedCredentials(profile_name: args.profile) if args.profile
+Stacker.credentials = Aws::SharedCredentials.new(profile_name: args.profile) if args.profile
 
 case args.command
   when /validate/
@@ -67,6 +70,15 @@ case args.command
   when /preprocess|show/
     check_template(args)
     puts JSON.pretty_generate(JSON.parse(Stacker.template_body(args.template)))
+  when /convert/
+    check_template(args)
+    template = File.read(args.template)
+    if args.json
+      puts '// autostacker24 CloudFormation JSON template'
+      puts JSON.pretty_generate(YAML.load(template))
+    else
+      puts JSON.parse(template).to_yaml.sub('---', '# autostacker24 CloudFormation YAML template')
+    end
   else
     error("unknown command '#{args.command}'")
 end

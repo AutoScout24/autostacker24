@@ -8,7 +8,7 @@ especially if you have lots of parameters or dependencies between stacks.
 You can use it directly from Ruby code or from the command line.
 It enhances CloudFormation templates by parameter expansion in strings and
 it is even possible to write templates in [YAML](examples/yaml-stack.md) which is much friendlier
-to humans than JSON.
+to humans than JSON. You can use `$ autostacker24 convert` to convert existing templates to YAML.
 
 ## Status
 [![Build Status](https://travis-ci.org/AutoScout24/autostacker24.svg)](https://travis-ci.org/AutoScout24/autostacker24)
@@ -77,6 +77,7 @@ It has support for comments and long embedded string documents which makes it is
   `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
   `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
+  `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"`
   `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
@@ -113,8 +114,19 @@ require 'autostacker24'
 
 You can also use AutoStacker24 in your command line.
 
-To Validate a template:
+To convert a valid template from JSON to YAML
 
+```
+$ autostacker24 convert --template /path/to/template.json
+```
+
+To convert a valid template from YAML to JSON
+
+```
+$ autostacker24 convert --template /path/to/template.json --to-json
+```
+
+To Validate a template:
 
 ```
 $ autostacker24 validate --template /path/to/template.json
@@ -123,5 +135,5 @@ $ autostacker24 validate --template /path/to/template.json
 To see the outcome after AutoStacker24 preprocessed your template;
 
 ```
-$ autostacker24 preprocess --template /path/to/template.json
+$ autostacker24 show --template /path/to/template.json
 ```
