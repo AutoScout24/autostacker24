@@ -59,15 +59,23 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '::text'))
   end
 
-  it 'expression with dot generates Fn::GetAtt' do
+  it 'dot generates Fn::GetAtt' do
     expect(interpolate('@Param.attr1.attr2')).to eq({'Fn::GetAtt' => ['Param', 'attr1.attr2']})
   end
 
-  it 'expression with dot generates Fn::GetAtt' do
+  it 'dot generates Fn::GetAtt embedded' do
     expect(interpolate('bla @Param.attr bla')).to eq(join('bla ', {'Fn::GetAtt' => ['Param', 'attr']}, ' bla'))
   end
 
-  it 'expression with [] generate Fn::FindInMap' do
+  it '[top,second] generates Fn::FindInMap' do
     expect(interpolate('@MyMap[Top, Second]')).to eq({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']})
+  end
+
+  it '[top,second] generates Fn::FindInMap embedded' do
+    expect(interpolate('@MyMap[  Top  ,Second  ]bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
+  end
+
+  it '@Top[second] generate Fn::FindInMap by convention' do
+    expect(interpolate('@My[Second]')).to eq({'Fn::FindInMap' => ['MyMap', {'Ref' => 'My'}, 'Second']})
   end
 end

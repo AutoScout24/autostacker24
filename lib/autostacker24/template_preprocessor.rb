@@ -160,7 +160,13 @@ module AutoStacker24
         return {'Fn::GetAtt' => [name, attr]}, s
       else
         map, s = parse_map(s)
-        return {'Fn::FindInMap' => [name, map[0], map[1]]}, s if map
+        if map
+          if map[1] # two arguments found
+            return {'Fn::FindInMap' => [name, map[0], map[1]]}, s
+          else
+            return {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, map[0]]}, s
+          end
+        end
       end
       return {'Ref' => name}, s
     end
@@ -174,10 +180,8 @@ module AutoStacker24
     def self.parse_map(s)
       return nil, s unless s[0] == '['
       top, s = parse_key(s[1..-1])
-      comma, s = parse_comma(s)
-      if comma
-        second, s = parse_key(s)
-      end
+      second, s = parse_comma(s)
+      second, s = parse_key(s) if second
       raise "Expected closing ] #{s}" unless s[0] == ']'
       return [top, second], s[1..-1]
     end
