@@ -74,10 +74,10 @@ case args.command
     check_template(args)
     template = File.read(args.template)
     if template =~ /\A(\s*\{)|(\s*\/{2})/
-      puts '// AutoStacker24 CloudFormation JSON template '
+      puts '// AutoStacker24 CloudFormation JSON Template '
       puts JSON.pretty_generate(YAML.load(template))
     else
-      puts JSON.parse(template).to_yaml.sub('---', '# AutoStacker24 CloudFormation YAML template')
+      puts JSON.parse(template).to_yaml.sub('---', '# AutoStacker24 CloudFormation YAML Template')
     end
   else
     error("unknown command '#{args.command}'")
