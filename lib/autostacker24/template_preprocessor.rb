@@ -118,6 +118,18 @@ module AutoStacker24
     end
 
     # interpolates a string with '@' expressions and returns a string or a hash
+    # it implements the following non context free grammar in pseudo antlr3
+    #
+    # string : RAW? (expr RAW?)*;
+    # expr   : '@' name (attr+ | map)?;
+    # name   : ID ('::' ID)?;
+    # attr   : ('.' ID)+;
+    # map    : '[' key (',' key)? ']';
+    # key    : ID | expr;
+    # ID     : [a-zA-Z0-9]+;
+    # RAW    : (~['@']* | FILE)=;
+    # FILE   : '@file://' [^@\s]+ '@' | ' ';
+    #
     def self.interpolate(s)
       parts = []
       while s.length > 0
@@ -134,13 +146,20 @@ module AutoStacker24
     end
 
     def self.parse_raw(s)
-      i = -1
+      i = 0
       loop do
-        i = s.index('@', i + 1)
+        i = s.index('@', i)
         return s, '' if i.nil?
-        return s[0, i], s[i..-1] if s[i+1] =~ /\w/
-        #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
-        s = s[0, i] + s[i+1..-1]
+
+        m = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
+        if m # inline file
+          s = s[0, i] + File.read(m[1]) + m.post_match
+        elsif s[i, 2] !~ /@\w/ # escape
+          s = s[0, i] + s[i+1..-1]
+          i += 1
+        else
+          return s[0, i], s[i..-1] if s[i, 2]
+        end
       end
     end
 
@@ -180,7 +199,7 @@ module AutoStacker24
       second, s = parse_comma(s)
       second, s = parse_key(s) if second
       second, s = parse_expr(s) if second.nil?
-      raise "Expected closing ] #{s}" unless s[0] == ']'
+      raise "Expected closing ']' #{s}" unless s[0] == ']'
       return [top, second], s[1..-1]
     end
 
