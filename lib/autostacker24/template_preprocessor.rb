@@ -99,6 +99,7 @@ module AutoStacker24
 
     def self.parse_expr(s)
       return nil, s if s.length == 0
+
       m = /\A@(\w+(::\w+)?)/.match(s)
       raise "Illegal expression #{s}" unless m
       name = m[1]
