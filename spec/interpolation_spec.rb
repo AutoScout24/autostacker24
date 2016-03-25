@@ -3,8 +3,12 @@ require 'spec_helper'
 RSpec.describe 'Interpolate' do
 
   def interpolate(s)
-    # AutoStacker24::Preprocessor.preprocess_string(s)
+    #AutoStacker24::Preprocessor.preprocess_string(s)
     AutoStacker24::Preprocessor.interpolate(s)
+  end
+
+  def join(*args)
+    {'Fn::Join' => ['', args]}
   end
 
   it 'can handle empty strings' do
@@ -48,11 +52,19 @@ RSpec.describe 'Interpolate' do
   end
 
   it 'joins multiple parts' do
-    expect(interpolate('bla @Param-blub')).to eq({'Fn::Join' => ['',['bla ', {'Ref' => 'Param'}, '-blub']]} )
+    expect(interpolate('bla @Param-blub')).to eq(join('bla ', {'Ref' => 'Param'}, '-blub'))
   end
 
   it 'expression stops at "@"' do
-    expect(interpolate('@Param@::text')).to eq({'Fn::Join' => ['', [{'Ref' => 'Param'}, '::text']]} )
+    expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '::text'))
+  end
+
+  it 'expression with dot generates Fn::GetAtt' do
+    expect(interpolate('@Param.attr1.attr2')).to eq({'Fn::GetAtt' => ['Param', 'attr1.attr2']})
+  end
+
+   it 'expression with dot generates Fn::GetAtt' do
+    expect(interpolate('bla @Param.attr bla')).to eq(join('bla ', {'Fn::GetAtt' => ['Param', 'attr']}, ' bla'))
   end
 
 end

@@ -155,9 +155,14 @@ module AutoStacker24
       name = m[1]
       s = m.post_match
 
+      attr, s = parse_attr(s)
+      if attr
+        return {'Fn::GetAtt' => [name, attr]}, s
+      end
+
       return {'Ref' => name}, s
 
-      # a, s = parse_attr(s)
+      #
       #
       # if a.nil?
       #   fk, sk, s = parse_map(s)
@@ -169,7 +174,9 @@ module AutoStacker24
     end
 
     def self.parse_attr(s)
-      return nil, s
+      m = /\A(\.\w+)+/.match(s)
+      return nil, s unless m
+      return m.to_s[1..-1], m.post_match
     end
 
     def self.parse_map(s)
