@@ -3,7 +3,6 @@ require 'spec_helper'
 RSpec.describe 'Interpolate' do
 
   def interpolate(s)
-    #AutoStacker24::Preprocessor.preprocess_string(s)
     AutoStacker24::Preprocessor.interpolate(s)
   end
 
@@ -75,7 +74,23 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@MyMap[  Top  ,Second  ]bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
   end
 
-  it '@Top[second] generate Fn::FindInMap by convention' do
-    expect(interpolate('@My[Second]')).to eq({'Fn::FindInMap' => ['MyMap', {'Ref' => 'My'}, 'Second']})
+  it '@Env[second] generates Fn::FindInMap by convention' do
+    expect(interpolate('@Env[Second]')).to eq({'Fn::FindInMap' => ['EnvMap', {'Ref' => 'Env'}, 'Second']})
   end
+
+  it '@Map[@Top, @Second] has simple expressions as keys' do
+    expect(interpolate('@Map[@Top, @Second]')).to eq({'Fn::FindInMap' => ['Map', {'Ref' => 'Top'}, {'Ref' => 'Second'}]})
+  end
+
+  it '@Map[@TopMap[@i2, second], @Second] generates nested Fn::FindInMap' do
+    nested_find_in_map = {
+        'Fn::FindInMap' => [
+            'Map',
+            {'Fn::FindInMap' => ['SubMap', {'Ref' => 'i2'}, 'second']},
+            {'Ref' => 'Second'}
+        ]
+    }
+    expect(interpolate('@Map[@SubMap[@i2, second], @Second]')).to eq(nested_find_in_map)
+  end
+
 end

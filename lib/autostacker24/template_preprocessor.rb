@@ -138,14 +138,10 @@ module AutoStacker24
       loop do
         i = s.index('@', i + 1)
         return s, '' if i.nil?
-        return s[0, i], s[i..-1] unless is_escape(s[i + 1])
+        return s[0, i], s[i..-1] if s[i+1] =~ /\w/
         #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
         s = s[0, i] + s[i+1..-1]
       end
-    end
-
-    def self.is_escape(s)
-      '@:[.,]'.include?(s)
     end
 
     def self.parse_expr(s)
@@ -180,8 +176,10 @@ module AutoStacker24
     def self.parse_map(s)
       return nil, s unless s[0] == '['
       top, s = parse_key(s[1..-1])
+      top, s = parse_expr(s) unless top
       second, s = parse_comma(s)
       second, s = parse_key(s) if second
+      second, s = parse_expr(s) if second.nil?
       raise "Expected closing ] #{s}" unless s[0] == ']'
       return [top, second], s[1..-1]
     end
