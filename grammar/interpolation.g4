@@ -1,25 +1,19 @@
 grammar interpolation;
 
-
-fragment
 ID    : [a-zA-Z0-9]+;
-//AT    : '@';
-LEFT  : '[';
-RIGHT : ']';
-COMMA : ',' ' '*;
-DOT   : '.';
 FILE  : '@file://';
+WS : ' '*;
 
 //ESC : '@' '@'| '[' | ']' | '.' | ':' ;
 //RAW: ~['@']+ ;
+//string: RAW expr RAW;
 
-expr: NAME (ATTR | mapping)?;
-
-mapping: LEFT key (COMMA key)?  RIGHT;
-
+expr: '@' name (attr+ | map)?;
+name: ID ('::' ID)?;
+attr: ('.' ID)+;
+map: '[' key (',' WS key)? ']';
 key: ID | expr;
 
-string: RAW expr RAW;
 
-NAME : '@' ID ('::' ID)+;
-ATTR : (DOT ID)+;
+
+
