@@ -122,7 +122,7 @@ module AutoStacker24
       parts = []
       while s.length > 0
         raw, s = parse_raw(s)
-        parts << raw if raw
+        parts << raw unless raw.empty?
         expr, s = parse_expr(s)
         parts << expr if expr
       end
@@ -138,7 +138,7 @@ module AutoStacker24
       loop do
         i = s.index('@', i + 1)
         return s, '' if i.nil?
-        return s[0, i-1], s[i..-1] unless is_escape(s[i + 1])
+        return s[0, i], s[i..-1] unless is_escape(s[i + 1])
         #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
         s = s[0, i] + s[i+1..-1]
       end

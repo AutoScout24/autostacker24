@@ -42,13 +42,13 @@ RSpec.describe 'Interpolate' do
   it 'replaces Param' do
     expect(interpolate('@Param')).to eq({'Ref' => 'Param'})
   end
-  #
-  # it 'replaces AWS::Param' do
-  #   expect(interpolate('@AWS::Param')).to eq({'Ref' => 'AWS::Param'})
-  # end
-  #
-  # it 'stops interpolatiog at AT' do
-  #   #expect(interpolate('@AWS::Param')).to eq({'Ref' => 'AWS::Param'})
-  # end
+
+  it 'replaces AWS::Param' do
+    expect(interpolate('@AWS::Param')).to eq({'Ref' => 'AWS::Param'})
+  end
+
+  it 'joins multiple parts' do
+    expect(interpolate('bla @Param-blub')).to eq({'Fn::Join' => ['',['bla ', {'Ref' => 'Param'}, '-blub']]} )
+  end
 
 end
