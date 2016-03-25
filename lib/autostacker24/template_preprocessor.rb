@@ -117,6 +117,47 @@ module AutoStacker24
       tokens
     end
 
-  end
+    # returns a string or a hash
+    def self.interpolate(s)
+      #s = replace_file(s) # /@file:\/\/(.*)$/.match(s)
+      parts = []
+      loop do
+        raw, s = parse_raw(s)
+        parts << raw if raw
+        expr, s = parse_expr(s)
+        break unless expr
+        parts << expr
+      end
+      raise  "Interpolation incomplete: '#{s}'" unless s.length == 0
 
+      if parts.length == 1
+        parts.first
+      else # we need a join construct
+        {'Fn::Join' => ['', parts]}
+      end
+    end
+
+    def self.replace_file(s)
+      s
+    end
+
+    def self.parse_expr(s)
+      return nil, s
+    end
+
+    def self.parse_raw(s)
+      i = -1
+      loop do
+        i = s.index('@', i + 1)
+        return s, '' if i.nil?
+        return s[0..i], s[i..-1] unless '@:[.'.include?(s[i + 1])
+        s = s[0..i-1] + s[i+1..-1]
+      end
+    end
+
+    def self.escape(s)
+      s[1] if '@:[.'.contains(s[1])
+    end
+
+  end
 end

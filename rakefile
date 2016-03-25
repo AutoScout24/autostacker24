@@ -3,7 +3,7 @@ require 'rubygems'
 require 'rubygems/package'
 
 include FileUtils
-require "rspec/core/rake_task"
+require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec).verbose = false
 
 desc 'Clean temporary files'
