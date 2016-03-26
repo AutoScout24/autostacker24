@@ -92,7 +92,7 @@ module AutoStacker24
           s = s[0, i] + s[i+1..-1]
           i += 1
         else
-          return s[0, i], s[i..-1] if s[i, 2]
+          return s[0, i], s[i..-1] # '@ expression found'
         end
       end
     end
