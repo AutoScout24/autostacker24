@@ -105,9 +105,9 @@ module AutoStacker24
       name = m[1]
       s = m.post_match
 
-      attr, s = parse_attr(s)
+      attr, s = parse(ATTRIB, s)
       if attr
-        return {'Fn::GetAtt' => [name, attr]}, s
+        return {'Fn::GetAtt' => [name, attr[1..-1]]}, s
       else
         map, s = parse_map(s)
         if map
@@ -122,47 +122,29 @@ module AutoStacker24
     end
 
     def self.parse_map(s)
-      bracket, s = parse_left_bracket(s)
+      bracket, s = parse(LEFT_BRACKET, s)
       return nil, s unless bracket
-      top, s = parse_key(s)
+      top, s = parse(KEY, s)
       top, s = parse_expr(s) unless top
-      second, s = parse_comma(s)
-      second, s = parse_key(s) if second
-      second, s = parse_expr(s) if second.nil?
-      bracket, s = parse_right_bracket(s)
+      comma, s = parse(COMMA, s)
+      second, s = parse(KEY, s) if comma
+      second, s = parse_expr(s) if comma and second.nil?
+      bracket, s = parse(RIGHT_BRACKET, s)
       raise "Expected closing ']' #{s}" unless bracket
       return [top, second], s
     end
 
-    def self.parse_left_bracket(s)
-      m = /\A\[\s*/.match(s)
-      return true, m.post_match if m
-      return false, s
-    end
-
-    def self.parse_right_bracket(s)
-      m = /\A\s*\]/.match(s)
-      return true, m.post_match if m
-      return false, s
-    end
-
-    def self.parse_comma(s)
-      m = /\A\s*,\s*/.match(s)
-      return true, m.post_match if m
-      return false, s
-    end
-
-    def self.parse_key(s)
-      m = /\A(\w+)/.match(s)
-      return m[0], m.post_match if m
+    def self.parse(re, s)
+      m = re.match(s)
+      return m.to_s, m.post_match if m
       return nil, s
     end
 
-    def self.parse_attr(s)
-      m = /\A(\.\w+)+/.match(s)
-      return m[0][1..-1], m.post_match if m
-      return nil, s
-    end
+    LEFT_BRACKET = /\A\[\s*/
+    RIGHT_BRACKET = /\A\s*\]/
+    COMMA = /\A\s*,\s*/
+    KEY = /\A(\w+)/
+    ATTRIB = /\A(\.\w+)+/
 
   end
 end
