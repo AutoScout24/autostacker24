@@ -121,33 +121,47 @@ module AutoStacker24
       return {'Ref' => name}, s
     end
 
-    def self.parse_attr(s)
-      m = /\A(\.\w+)+/.match(s)
-      return nil, s unless m
-      return m[0][1..-1], m.post_match
-    end
-
     def self.parse_map(s)
-      return nil, s unless s[0] == '['
-      top, s = parse_key(s[1..-1])
+      bracket, s = parse_left_bracket(s)
+      return nil, s unless bracket
+      top, s = parse_key(s)
       top, s = parse_expr(s) unless top
       second, s = parse_comma(s)
       second, s = parse_key(s) if second
       second, s = parse_expr(s) if second.nil?
-      raise "Expected closing ']' #{s}" unless s[0] == ']'
-      return [top, second], s[1..-1]
+      bracket, s = parse_right_bracket(s)
+      raise "Expected closing ']' #{s}" unless bracket
+      return [top, second], s
+    end
+
+    def self.parse_left_bracket(s)
+      m = /\A\[\s*/.match(s)
+      return true, m.post_match if m
+      return false, s
+    end
+
+    def self.parse_right_bracket(s)
+      m = /\A\s*\]/.match(s)
+      return true, m.post_match if m
+      return false, s
     end
 
     def self.parse_comma(s)
       m = /\A\s*,\s*/.match(s)
-      return false, s unless m
-      return true, m.post_match
+      return true, m.post_match if m
+      return false, s
     end
 
     def self.parse_key(s)
-      m = /\A\s*(\w+)\s*/.match(s)
-      return nil, s unless m
-      return m[1], m.post_match
+      m = /\A(\w+)/.match(s)
+      return m[0], m.post_match if m
+      return nil, s
+    end
+
+    def self.parse_attr(s)
+      m = /\A(\.\w+)+/.match(s)
+      return m[0][1..-1], m.post_match if m
+      return nil, s
     end
 
   end

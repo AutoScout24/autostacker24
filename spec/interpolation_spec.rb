@@ -93,6 +93,17 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@Map[@SubMap[@i2, second], @Second]')).to eq(nested_find_in_map)
   end
 
+  it 'ignores whitespace in brackets' do
+    find_in_map = {
+        'Fn::FindInMap' => [
+            'm1',
+            {'Fn::FindInMap' => ['m2', {'Ref' => 'i'}, 'j']},
+            {'Ref' => 'k'}
+        ]
+    }
+    expect(interpolate('@m1[  @m2[ @i , j ],  @k  ]')).to eq(find_in_map)
+  end
+
   it 'includes files and interpolates content' do
     interpolated = join("bla\n#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n\nblub")
     expect(interpolate("bla\n@file://./spec/example_script.sh\nblub")).to eq(interpolated)
