@@ -1,6 +1,6 @@
 ## Example YAML Template
-Not that in YAML `@` is a reserved character so if it is the first character
-in a string you have to quote the string.
+Note that in YAML `@` is a reserved character so if it is the first character
+in a string you have to quote the complete string.
 
 ```yaml
 # AutoStacker24 YAML CloudFormation Template
