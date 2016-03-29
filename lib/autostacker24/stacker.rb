@@ -3,6 +3,10 @@ require 'set'
 
 require_relative 'template_preprocessor.rb'
 
+# disable buffering to stdout and stderr so we get immediate feedback if run by Jenkins/TeamCity/Docker
+STDOUT.sync = true
+STDERR.sync = true
+
 module Stacker
 
   attr_reader :region, :credentials
