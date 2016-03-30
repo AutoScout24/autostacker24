@@ -55,7 +55,7 @@ module AutoStacker24
     # it implements the following non context free grammar in pseudo antlr3
     #
     # string : RAW? (expr RAW?)*;
-    # expr   : '@' name (attr+ | map)?;
+    # expr   : '@' '{'? name (attr+ | map)? '}'?;
     # name   : ID ('::' ID)?;
     # attr   : ('.' ID)+;
     # map    : '[' key (',' key)? ']';
@@ -88,11 +88,11 @@ module AutoStacker24
         m = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
         if m # inline file
           s = s[0, i] + File.read(m[1]) + m.post_match
-        elsif s[i, 2] !~ /@\w/ # escape
+        elsif s[i, 2] !~ /\A@[\w{]/ # escape
           s = s[0, i] + s[i+1..-1]
           i += 1
         else
-          return s[0, i], s[i..-1] # '@ expression found'
+          return s[0, i], s[i..-1] # return raw, '@...'
         end
       end
     end
@@ -100,25 +100,33 @@ module AutoStacker24
     def self.parse_expr(s)
       return nil, s if s.length == 0
 
-      m = /\A@(\w+(::\w+)?)/.match(s)
-      raise "Illegal expression #{s}" unless m
-      name = m[1]
-      s = m.post_match
+      at, s = parse(AT, s)
+      raise "expected '@' but got #{s}" unless at
+      curly, s = parse(LEFT_CURLY, s)
+      name, s = parse(NAME, s)
+      raise "expected parameter name #{s}" unless name
 
+      expr = {'Ref' => name}
       attr, s = parse(ATTRIB, s)
       if attr
-        return {'Fn::GetAtt' => [name, attr[1..-1]]}, s
+        expr = {'Fn::GetAtt' => [name, attr[1..-1]]}
       else
         map, s = parse_map(s)
         if map
           if map[1] # two arguments found
-            return {'Fn::FindInMap' => [name, map[0], map[1]]}, s
+            expr = {'Fn::FindInMap' => [name, map[0], map[1]]}
           else
-            return {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, map[0]]}, s
+            expr = {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, map[0]]}
           end
         end
       end
-      return {'Ref' => name}, s
+
+      if curly
+        curly, s = parse(RIGHT_CURLY, s)
+        raise "expected '}' but got #{s}" unless curly
+      end
+
+      return expr, s
     end
 
     def self.parse_map(s)
@@ -140,11 +148,15 @@ module AutoStacker24
       return nil, s
     end
 
+    # Tokens
+    AT = /\A@/
+    NAME = /\A\w+(::\w+)?/
     LEFT_BRACKET = /\A\[\s*/
     RIGHT_BRACKET = /\A\s*\]/
+    LEFT_CURLY = /\A\{/
+    RIGHT_CURLY = /\A\}/
     COMMA = /\A\s*,\s*/
     KEY = /\A(\w+)/
     ATTRIB = /\A(\.\w+)+/
-
   end
 end

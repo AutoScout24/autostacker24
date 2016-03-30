@@ -113,4 +113,7 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@file')).to eq({'Ref' => 'file'})
   end
 
+  it 'can use curly braces to remove ambiguity' do
+    expect(interpolate('@{subdomain}.example.com.')).to eq({'Fn::Join' => ['', [{'Ref' => 'subdomain'}, '.example.com.']]})
+  end
 end
