@@ -106,30 +106,37 @@ module AutoStacker24
       name, s = parse(NAME, s)
       raise "expected parameter name #{s}" unless name
 
-      expr = {'Ref' => name}
-      attr, s = parse(ATTRIB, s)
-      if attr
-        expr = {'Fn::GetAtt' => [name, attr[1..-1]]}
-      else
-        map, s = parse_map(s)
-        if map
-          if map[1] # two arguments found
-            expr = {'Fn::FindInMap' => [name, map[0], map[1]]}
-          else
-            expr = {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, map[0]]}
-          end
-        end
-      end
-
       if curly
+        # try attribute, then map, then fallback to simple ref.
+        expr, s = parse_attribute(s, name)
+        expr, s = parse_map(s, name)       unless expr
+        expr, s = parse_reference(s, name) unless expr
+
         curly, s = parse(RIGHT_CURLY, s)
         raise "expected '}' but got #{s}" unless curly
+      else
+        # try map, then fallback to simple ref.
+        expr, s = parse_map(s, name)
+        expr, s = parse_reference(s, name) unless expr
       end
 
       return expr, s
     end
 
-    def self.parse_map(s)
+    def self.parse_reference(s, name)
+      return {'Ref' => name}, s
+    end
+
+    def self.parse_attribute(s, name)
+      attr, s = parse(ATTRIB, s)
+      if attr
+        return {'Fn::GetAtt' => [name, attr[1..-1]]}, s
+      else
+        return nil, s
+      end
+    end
+
+    def self.parse_map(s, name)
       bracket, s = parse(LEFT_BRACKET, s)
       return nil, s unless bracket
       top, s = parse(KEY, s)
@@ -139,7 +146,12 @@ module AutoStacker24
       second, s = parse_expr(s) if comma and second.nil?
       bracket, s = parse(RIGHT_BRACKET, s)
       raise "Expected closing ']' #{s}" unless bracket
-      return [top, second], s
+      map = [top, second]
+      if second # two arguments found
+        return {'Fn::FindInMap' => [name, top, second]}, s
+      else
+        return {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, top]}, s
+      end
     end
 
     def self.parse(re, s)

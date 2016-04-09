@@ -58,12 +58,22 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '::text'))
   end
 
-  it 'dot generates Fn::GetAtt' do
-    expect(interpolate('@Param.attr1.attr2')).to eq({'Fn::GetAtt' => ['Param', 'attr1.attr2']})
+  it 'dot does not generate Fn::GetAtt outside of curly' do
+    expect(interpolate('@Param.domain.tld')).to eq(join({'Ref'=>'Param'}, '.domain.tld'))
   end
 
-  it 'dot generates Fn::GetAtt embedded' do
-    expect(interpolate('bla @Param.attr bla')).to eq(join('bla ', {'Fn::GetAtt' => ['Param', 'attr']}, ' bla'))
+  it 'dot does not generate Fn::GetAtt outside of curly, embedded' do
+    expect(interpolate('bla @Param.bla bla')).to eq(join('bla ', {'Ref'=>'Param'}, '.bla bla'))
+  end
+
+  it 'dot does generate Fn::GetAtt in curly' do
+    expect(interpolate('@{Param.attr1.attr2}.domain.tld')).to eq(
+      join({'Fn::GetAtt' => ['Param', 'attr1.attr2']}, '.domain.tld'))
+  end
+
+  it 'dot does generate Fn::GetAtt in curly, embedded' do
+    expect(interpolate('bla @{Param.attr}bla bla')).to eq(
+      join('bla ', {'Fn::GetAtt' => ['Param', 'attr']}, 'bla bla'))
   end
 
   it '[top,second] generates Fn::FindInMap' do
