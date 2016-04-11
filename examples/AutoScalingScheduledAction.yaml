@@ -185,7 +185,7 @@ Resources:
           files:
             "/var/www/html/index.html":
               content: |
-                <img src="@Region2Examples[Examples, @AWS::Region]/cloudformation_graphic.png" alt="AWS CloudFormation Logo"/>
+                <img src="@{Region2Examples[Examples, @AWS::Region]}/cloudformation_graphic.png" alt="AWS CloudFormation Logo"/>
                 <h1>Congratulations, you have successfully launched the AWS CloudFormation sample.</h1>
               mode: '000644'
               owner: root
@@ -218,7 +218,7 @@ Resources:
                 - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
     Properties:
       KeyName: "@KeyName"
-      ImageId: "@AWSRegionArch2AMI[@AWS::Region, @AWSInstanceType2Arch[Arch, @InstanceType]]"
+      ImageId: "@{AWSRegionArch2AMI[@AWS::Region, @AWSInstanceType2Arch[Arch, @InstanceType]]}"
       SecurityGroups: "@InstanceSecurityGroup"
       InstanceType: "@InstanceType"
       UserData: |

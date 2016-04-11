@@ -53,10 +53,10 @@ Resources:
       IamInstanceProfile: "@InstanceProfile"
       ImageId: "@ImageId"
       InstanceMonitoring: false
-      InstanceType: "@Environment[InstanceType]"
+      InstanceType: "@{Environment[InstanceType]}"
       KeyName: instance_key
       SecurityGroups:
-      - "@Environment[InstanceSecurityGroup]"
+      - "@{Environment[InstanceSecurityGroup]}"
       - "@BastionSSH"
       UserData: |
         #!/bin/bash -xe
@@ -92,7 +92,7 @@ Resources:
         SSLCertificateId: arn:aws:iam::1234567800:server-certificate/service
       Scheme: internet-facing
       SecurityGroups:
-      - "@Environment[ELBSecurityGroup]"
+      - "@{Environment[ELBSecurityGroup]}"
       Subnets: "@Environment[Subnets]"
       Tags:
       - Key: Name
@@ -102,7 +102,7 @@ Resources:
   ASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      AvailabilityZones: "@Environment[AvailabilityZones]"
+      AvailabilityZones: "@{Environment[AvailabilityZones]}"
       Cooldown: 600
       DesiredCapacity: 1
       HealthCheckGracePeriod: 180
@@ -119,7 +119,7 @@ Resources:
       - Key: Environment
         Value: "@Environment"
         PropagateAtLaunch: true
-      VPCZoneIdentifier: "@Environment[Subnets]"
+      VPCZoneIdentifier: "@{Environment[Subnets]}"
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MinInstancesInService: 1
@@ -140,6 +140,6 @@ Resources:
           - CanonicalHostedZoneNameID
       Comment: "@AWS::StackName"
       HostedZoneName: myorg.net.
-      Name: "@Environment[DomainName]"
+      Name: "@{Environment[DomainName]}"
       Type: A
 ```

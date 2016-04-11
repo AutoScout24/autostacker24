@@ -97,27 +97,28 @@ module AutoStacker24
       end
     end
 
-    def self.parse_expr(s)
+    def self.parse_expr(s, nested = false)
       return nil, s if s.length == 0
 
       at, s = parse(AT, s)
       raise "expected '@' but got #{s}" unless at
-      curly, s = parse(LEFT_CURLY, s)
+      curly, s = parse(LEFT_CURLY, s) unless nested
       name, s = parse(NAME, s)
       raise "expected parameter name #{s}" unless name
 
-      if curly
+      if curly or nested
         # try attribute, then map, then fallback to simple ref.
         expr, s = parse_attribute(s, name)
         expr, s = parse_map(s, name)       unless expr
         expr, s = parse_reference(s, name) unless expr
 
-        curly, s = parse(RIGHT_CURLY, s)
-        raise "expected '}' but got #{s}" unless curly
+        if curly
+          closing_curly, s = parse(RIGHT_CURLY, s)
+          raise "expected '}' but got #{s}" unless closing_curly
+        end
       else
-        # try map, then fallback to simple ref.
-        expr, s = parse_map(s, name)
-        expr, s = parse_reference(s, name) unless expr
+        # allow only simple ref.
+        expr, s = parse_reference(s, name)
       end
 
       return expr, s
@@ -140,10 +141,10 @@ module AutoStacker24
       bracket, s = parse(LEFT_BRACKET, s)
       return nil, s unless bracket
       top, s = parse(KEY, s)
-      top, s = parse_expr(s) unless top
+      top, s = parse_expr(s, nested=true) unless top
       comma, s = parse(COMMA, s)
       second, s = parse(KEY, s) if comma
-      second, s = parse_expr(s) if comma and second.nil?
+      second, s = parse_expr(s, nested=true) if comma and second.nil?
       bracket, s = parse(RIGHT_BRACKET, s)
       raise "Expected closing ']' #{s}" unless bracket
       map = [top, second]

@@ -77,22 +77,22 @@ RSpec.describe 'Interpolate' do
   end
 
   it '[top,second] generates Fn::FindInMap' do
-    expect(interpolate('@MyMap[Top, Second]')).to eq({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']})
+    expect(interpolate('@{MyMap[Top, Second]}')).to eq({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']})
   end
 
   it '[top,second] generates Fn::FindInMap embedded' do
-    expect(interpolate('@MyMap[  Top  ,Second  ]bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
+    expect(interpolate('@{MyMap[  Top  ,Second  ]}bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
   end
 
-  it '@Env[second] generates Fn::FindInMap by convention' do
-    expect(interpolate('@Env[Second]')).to eq({'Fn::FindInMap' => ['EnvMap', {'Ref' => 'Env'}, 'Second']})
+  it '@{Env[second]} generates Fn::FindInMap by convention' do
+    expect(interpolate('@{Env[Second]}')).to eq({'Fn::FindInMap' => ['EnvMap', {'Ref' => 'Env'}, 'Second']})
   end
 
-  it '@Map[@Top, @Second] has simple expressions as keys' do
-    expect(interpolate('@Map[@Top, @Second]')).to eq({'Fn::FindInMap' => ['Map', {'Ref' => 'Top'}, {'Ref' => 'Second'}]})
+  it '@{Map[@Top, @Second]} has simple expressions as keys' do
+    expect(interpolate('@{Map[@Top, @Second]}')).to eq({'Fn::FindInMap' => ['Map', {'Ref' => 'Top'}, {'Ref' => 'Second'}]})
   end
 
-  it '@Map[@TopMap[@i2, second], @Second] generates nested Fn::FindInMap' do
+  it '@{Map[@TopMap[@i2, second], @Second]} generates nested Fn::FindInMap' do
     nested_find_in_map = {
         'Fn::FindInMap' => [
             'Map',
@@ -100,7 +100,7 @@ RSpec.describe 'Interpolate' do
             {'Ref' => 'Second'}
         ]
     }
-    expect(interpolate('@Map[@SubMap[@i2, second], @Second]')).to eq(nested_find_in_map)
+    expect(interpolate('@{Map[@SubMap[@i2, second], @Second]}')).to eq(nested_find_in_map)
   end
 
   it 'ignores whitespace in brackets' do
@@ -111,7 +111,7 @@ RSpec.describe 'Interpolate' do
             {'Ref' => 'k'}
         ]
     }
-    expect(interpolate('@m1[  @m2[ @i , j ],  @k  ]')).to eq(find_in_map)
+    expect(interpolate('@{m1[  @m2[ @i , j ],  @k  ]}')).to eq(find_in_map)
   end
 
   it 'includes files and interpolates content' do

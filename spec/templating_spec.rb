@@ -27,8 +27,8 @@ RSpec.describe 'Stacker Template Processing' do
       "already_encoded": {
         "UserData": {"Fn::Base64": "#!/bin/bash"}
       },
-      "find_in_map": "@EnvMap[@Env, Key]",
-      "find_in_map_convention": "@Env[Key]"
+      "find_in_map": "@{EnvMap[@Env, Key]}",
+      "find_in_map_convention": "@{Env[Key]}"
     }
     EOL
   end
