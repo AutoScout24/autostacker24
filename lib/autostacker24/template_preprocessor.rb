@@ -80,18 +80,18 @@ module AutoStacker24
     end
 
     def self.parse_raw(s)
-      i = 0
+      i = -1
       loop do
-        i = s.index('@', i)
+        i = s.index('@', i + 1)
         return s, '' if i.nil?
 
         m = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
         if m # inline file
           s = s[0, i] + File.read(m[1]) + m.post_match
-        elsif s[i, 2] !~ /\A@[\w{]/ # escape
+          i -= 1
+        elsif s[i, 2] =~ /\A@@/ # escape
           s = s[0, i] + s[i+1..-1]
-          i += 1
-        else
+        elsif s[i, 2] =~ /\A@(\w|\{)/
           return s[0, i], s[i..-1] # return raw, '@...'
         end
       end
