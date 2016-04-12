@@ -78,12 +78,13 @@ It has support for comments and long embedded string documents which makes it is
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
   `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
   `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"`
-  `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
+  `"{"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]}` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
+  `"{"Fn::GetAtt": ["Resource", "Attrib"]}` | `@Resource.Attrib`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
 
 ```javascript
-// AutoStacker24 JSON
+// AutoStacker24 CloudFormation JSON Template
 {
   "AWSTemplateFormatVersion": "2010-09-09"
   ...
@@ -123,7 +124,7 @@ $ autostacker24 convert --template /path/to/template.json
 To convert a valid template from YAML to JSON
 
 ```
-$ autostacker24 convert --template /path/to/template.json --to-json
+$ autostacker24 convert --template /path/to/template.yaml
 ```
 
 To Validate a template:
@@ -136,4 +137,9 @@ To see the outcome after AutoStacker24 preprocessed your template;
 
 ```
 $ autostacker24 show --template /path/to/template.json
+```
+
+To create or update a stack
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --region eu-west-1
 ```

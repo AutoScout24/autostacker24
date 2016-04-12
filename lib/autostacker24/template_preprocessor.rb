@@ -41,82 +41,122 @@ module AutoStacker24
       elsif json.is_a?(Array)
         json.map{|v| preprocess_json(v)}
       elsif json.is_a?(String)
-        preprocess_string(json)
+        interpolate(json)
       else
         json
       end
     end
 
     def self.preprocess_user_data(s)
-      {'Fn::Base64' => preprocess_string(s)}
+      {'Fn::Base64' => interpolate(s)}
     end
 
-    def self.preprocess_string(s)
-      m = /^@file:\/\/(.*)$/.match(s)
-      s = File.read(m[1]) if m
-      parts = tokenize(s).map do |token|
-        case token
-          when '@@' then '@'
-          when '@[' then '['
-          when /\A@/ then parse_ref(token)
-          else token
-        end
+    # interpolates a string with '@' expressions and returns a string or a hash
+    # it implements the following non context free grammar in pseudo antlr3
+    #
+    # string : RAW? (expr RAW?)*;
+    # expr   : '@' '{'? name (attr+ | map)? '}'?;
+    # name   : ID ('::' ID)?;
+    # attr   : ('.' ID)+;
+    # map    : '[' key (',' key)? ']';
+    # key    : ID | expr;
+    # ID     : [a-zA-Z0-9]+;
+    # RAW    : (~['@']* | FILE)=;
+    # FILE   : '@file://' [^@\s]+ '@' | ' ';
+    #
+    def self.interpolate(s)
+      parts = []
+      while s.length > 0
+        raw, s = parse_raw(s)
+        parts << raw unless raw.empty?
+        expr, s = parse_expr(s)
+        parts << expr if expr
       end
-
-      # merge neighboured strings
-      parts = parts.reduce([])do |m, p|
-        if m.last.is_a?(String) && p.is_a?(String)
-          m[-1] += p
-        else
-          m << p
-        end
-        m
-      end
-
-      if parts.length == 1
-        parts.first
-      else # we need a join construct
-        {'Fn::Join' => ['', parts]}
-      end
-    end
-
-    def self.parse_ref(token)
-      m = /\A@([^\[]*)(\[([^,]*)(\s*,\s*(.*))?\])?$/.match(token)
-      m1 = m[1]
-      m2 = m[3]
-      m3 = m[5]
-      if m2
-        args = if m3
-                  [m1, m2, m3]
-               else
-                 [m1 + 'Map', '@' + m1, m2]
-               end
-        {'Fn::FindInMap' => [args[0], preprocess_string(args[1]), preprocess_string(args[2])]}
-      else
-        {'Ref' => m1}
+      case parts.length
+        when 0 then ''
+        when 1 then parts[0]
+        else {'Fn::Join' => ['', parts]}
       end
     end
 
-    def self.tokenize(s)
-      # for recursive bracket matching see
-      # http://stackoverflow.com/questions/19486686/recursive-nested-matching-pairs-of-curly-braces-in-ruby-regex
-      # but for we limit ourself to one level to make things less complex
-      pattern = /@@|@\[|@(\w+(::\w+)?)(\[[^\]]*\])?/
-      tokens = []
+    def self.parse_raw(s)
+      i = -1
       loop do
-        m = pattern.match(s)
-        if m
-          tokens << m.pre_match unless m.pre_match.empty?
-          tokens << m.to_s
-          s = m.post_match
-        else
-          tokens << s unless s.empty? && !tokens.empty?
-          break
+        i = s.index('@', i + 1)
+        return s, '' if i.nil?
+
+        m = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
+        if m # inline file
+          s = s[0, i] + File.read(m[1]) + m.post_match
+          i -= 1
+        elsif s[i, 2] =~ /\A@@/ # escape
+          s = s[0, i] + s[i+1..-1]
+        elsif s[i, 2] =~ /\A@(\w|\{)/
+          return s[0, i], s[i..-1] # return raw, '@...'
         end
       end
-      tokens
     end
 
-  end
+    def self.parse_expr(s)
+      return nil, s if s.length == 0
 
+      at, s = parse(AT, s)
+      raise "expected '@' but got #{s}" unless at
+      curly, s = parse(LEFT_CURLY, s)
+      name, s = parse(NAME, s)
+      raise "expected parameter name #{s}" unless name
+
+      expr = {'Ref' => name}
+      attr, s = parse(ATTRIB, s)
+      if attr
+        expr = {'Fn::GetAtt' => [name, attr[1..-1]]}
+      else
+        map, s = parse_map(s)
+        if map
+          if map[1] # two arguments found
+            expr = {'Fn::FindInMap' => [name, map[0], map[1]]}
+          else
+            expr = {'Fn::FindInMap' => [name + 'Map', {'Ref' => name}, map[0]]}
+          end
+        end
+      end
+
+      if curly
+        curly, s = parse(RIGHT_CURLY, s)
+        raise "expected '}' but got #{s}" unless curly
+      end
+
+      return expr, s
+    end
+
+    def self.parse_map(s)
+      bracket, s = parse(LEFT_BRACKET, s)
+      return nil, s unless bracket
+      top, s = parse(KEY, s)
+      top, s = parse_expr(s) unless top
+      comma, s = parse(COMMA, s)
+      second, s = parse(KEY, s) if comma
+      second, s = parse_expr(s) if comma and second.nil?
+      bracket, s = parse(RIGHT_BRACKET, s)
+      raise "Expected closing ']' #{s}" unless bracket
+      return [top, second], s
+    end
+
+    def self.parse(re, s)
+      m = re.match(s)
+      return m.to_s, m.post_match if m
+      return nil, s
+    end
+
+    # Tokens
+    AT = /\A@/
+    NAME = /\A\w+(::\w+)?/
+    LEFT_BRACKET = /\A\[\s*/
+    RIGHT_BRACKET = /\A\s*\]/
+    LEFT_CURLY = /\A\{/
+    RIGHT_CURLY = /\A\}/
+    COMMA = /\A\s*,\s*/
+    KEY = /\A(\w+)/
+    ATTRIB = /\A(\.\w+)+/
+  end
 end

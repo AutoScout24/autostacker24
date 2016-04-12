@@ -1,6 +1,6 @@
 ## Example YAML Template
-Not that in YAML `@` is a reserved character so if it is the first character
-in a string you have to quote the string.
+Note that in YAML `@` is a reserved character so if it is the first character
+in a string you have to quote the complete string.
 
 ```yaml
 # AutoStacker24 YAML CloudFormation Template
@@ -62,9 +62,8 @@ Resources:
         #!/bin/bash -xe
         aws ecr get-login --region us-east-1 | /bin/bash
         docker run -d --restart=always -e ENVIRONMENT=@Environment 1234567800.dkr.ecr.us-east-1.amazonaws.com/my-service:@Version
-        sleep 10
-        wget --retry-connrefused --tries=30 --wait=1 --timeout=1 -O - http://localhost:8080/health && SUCCESS=true || SUCCESS=false
-        /opt/aws/bin/cfn-signal --success ${SUCCESS} --stack @AWS::StackName --resource ASG --region @AWS::Region
+        wget -nv --retry-connrefused --tries=30 --wait=1 --timeout=1 -O- http://localhost:8080/health
+        /opt/aws/bin/cfn-signal -e $? --stack @AWS::StackName --resource ASG --region @AWS::Region
   ELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
