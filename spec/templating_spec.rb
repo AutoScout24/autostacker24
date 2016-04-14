@@ -21,6 +21,10 @@ RSpec.describe 'Stacker Template Processing' do
         "UserData": "@file://./spec/example_script.sh",
         "NonUserData": "@file://./spec/example_script.sh"
       },
+      "file_curly_include": {
+        "UserData": "@{file://./spec/example_script.sh}",
+        "NonUserData": "@{file://./spec/example_script.sh}"
+      },
       "auto_encode": {
         "UserData": "auto encode"
       },
@@ -89,6 +93,16 @@ RSpec.describe 'Stacker Template Processing' do
   it 'substitutes @file:// in UserData with file content and encodes it in base64' do
     user_data = {'Fn::Join' =>['', ["#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n"]]}
     expect(processed['file_include']['UserData']).to eq('Fn::Base64' => user_data)
+  end
+
+  it 'substitutes @{file://...} with file content' do
+    content = {'Fn::Join' =>['', ["#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n"]]}
+    expect(processed['file_curly_include']['NonUserData']).to eq(content)
+  end
+
+  it 'substitutes @{file://...} in UserData with file content and encodes it in base64' do
+    user_data = {'Fn::Join' =>['', ["#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n"]]}
+    expect(processed['file_curly_include']['UserData']).to eq('Fn::Base64' => user_data)
   end
 
   it 'wraps userData in a Base64 encoded block' do

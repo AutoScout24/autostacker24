@@ -65,21 +65,21 @@ It has support for comments and long embedded string documents which makes it is
 
 3. Referencing parameters and building strings is quite cumbersome in CloudFormation. AutoStacker24 gives you a more convenient syntax: Inside a string, you can reference one or more parameters with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
 
-4. For the "UserData" property you can pass a simple string that gets  auto encoded to base64. This is especially useful for templates written in yaml. You can reference a file `@file://./myscript.sh` that will be read into a simple string.
+4. For the "UserData" property you can pass a simple string that gets  auto encoded to base64. This is especially useful for templates written in yaml. You can reference a file `@{file://./myscript.sh}` that will be read into a simple string.
 
-5. Instead of using Fn::FindInMap you can do something like `@EnvironmentMap[@Environment, Key]`
+5. Instead of using Fn::FindInMap you can do something like `@{EnvironmentMap[@Environment, Key]}`
 
 ### Examples
 
   instead of | just write
   ------------- | -------------
-  `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
-  `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
+  `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"` or `"prop": "@{myVar}"`
+  `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"` or `"prop": "@{AWS::StackName}-@{tableName}-test"`
   `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
-  `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
-  `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"`
-  `"{"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]}` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
-  `"{"Fn::GetAtt": ["Resource", "Attrib"]}` | `@Resource.Attrib`
+  `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"` or `"UserData": "@{file://./myscript.sh}"`
+  `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"` or `"content" : "@{file://./myfile.txt}"`
+  `"{"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]}` | `"@{RegionMap[@Region, 32]}"` or `"@{Region[32]}`
+  `"{"Fn::GetAtt": ["Resource", "Attrib"]}` | `@{Resource.Attrib}`
 
 By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
 

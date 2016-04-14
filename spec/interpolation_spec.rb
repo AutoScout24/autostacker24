@@ -114,9 +114,18 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@{m1[  @m2[ @i , j ],  @k  ]}')).to eq(find_in_map)
   end
 
-  it 'includes files and interpolates content' do
+  it 'includes files with @{file} and interpolates content' do
+    interpolated = join("bla\n#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n\nblub")
+    expect(interpolate("bla\n@{file://./spec/example_script.sh}\nblub")).to eq(interpolated)
+  end
+
+  it 'includes files with @file and interpolates content' do
     interpolated = join("bla\n#!/bin/bash\n\necho \"", {'Ref' => 'Version'}, "\"\n\nblub")
     expect(interpolate("bla\n@file://./spec/example_script.sh\nblub")).to eq(interpolated)
+  end
+
+  it '@{file} is still interpolated as a ref' do
+    expect(interpolate('@{file}')).to eq({'Ref' => 'file'})
   end
 
   it '@file is still interpolated as a ref' do

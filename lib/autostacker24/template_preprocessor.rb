@@ -62,7 +62,8 @@ module AutoStacker24
     # key    : ID | expr;
     # ID     : [a-zA-Z0-9]+;
     # RAW    : (~['@']* | FILE)=;
-    # FILE   : '@file://' [^@\s]+ '@' | ' ';
+    # FILE   : '@file://' [^@\s]+ ('@' | ' ');
+    # FILE_C : '@{file://' [^}] '}';
     #
     def self.interpolate(s)
       parts = []
@@ -85,9 +86,12 @@ module AutoStacker24
         i = s.index('@', i)
         return s, '' if i.nil?
 
-        m = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
-        if m # inline file
-          s = s[0, i] + File.read(m[1]) + m.post_match
+        file_match = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
+        file_curly_match = /\A@\{file:\/\/([^\}]+)\}/.match(s[i..-1])
+        if file_match # inline file
+          s = s[0, i] + File.read(file_match[1]) + file_match.post_match
+        elsif file_curly_match # inline file with curly braces
+          s = s[0, i] + File.read(file_curly_match[1]) + file_curly_match.post_match
         elsif s[i, 2] !~ /\A@[\w{]/ # escape
           s = s[0, i] + s[i+1..-1]
           i += 1
@@ -97,25 +101,40 @@ module AutoStacker24
       end
     end
 
-    def self.parse_expr(s, nested = false)
+    #
+    # Parse given string as AutoStacker24 expression, and produce CloudFormation
+    # function from it (Fn::GetAtt, Fn::FindInMap, Ref).
+    #
+    # == Parameters:
+    # s::
+    #  the string to parse
+    # embedded::
+    #  whether the string is embedded in an AutoStacker24 expression already.
+    #  Embedded expressions may start with '@{', and may only start with '@'.
+    #
+    def self.parse_expr(s, embedded = false)
       return nil, s if s.length == 0
 
       at, s = parse(AT, s)
       raise "expected '@' but got #{s}" unless at
-      curly, s = parse(LEFT_CURLY, s) unless nested
+      curly, s = parse(LEFT_CURLY, s) unless embedded
       name, s = parse(NAME, s)
       raise "expected parameter name #{s}" unless name
 
-      if curly or nested
+      if embedded
         # try attribute, then map, then fallback to simple ref.
         expr, s = parse_attribute(s, name)
         expr, s = parse_map(s, name)       unless expr
         expr, s = parse_reference(s, name) unless expr
 
-        if curly
-          closing_curly, s = parse(RIGHT_CURLY, s)
-          raise "expected '}' but got #{s}" unless closing_curly
-        end
+      elsif curly
+        # try attribute, then map, then fallback to simple ref.
+        expr, s = parse_attribute(s, name)
+        expr, s = parse_map(s, name)       unless expr
+        expr, s = parse_reference(s, name) unless expr
+
+        closing_curly, s = parse(RIGHT_CURLY, s)
+        raise "expected '}' but got #{s}" unless closing_curly
       else
         # allow only simple ref.
         expr, s = parse_reference(s, name)
@@ -144,7 +163,7 @@ module AutoStacker24
       top, s = parse_expr(s, nested=true) unless top
       comma, s = parse(COMMA, s)
       second, s = parse(KEY, s) if comma
-      second, s = parse_expr(s, nested=true) if comma and second.nil?
+      second, s = parse_expr(s, embedded=true) if comma and second.nil?
       bracket, s = parse(RIGHT_BRACKET, s)
       raise "Expected closing ']' #{s}" unless bracket
       map = [top, second]
