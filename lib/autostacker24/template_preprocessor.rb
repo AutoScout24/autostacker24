@@ -81,21 +81,22 @@ module AutoStacker24
     end
 
     def self.parse_raw(s)
-      i = 0
+      i = -1
       loop do
-        i = s.index('@', i)
+        i = s.index('@', i + 1)
         return s, '' if i.nil?
 
         file_match = /\A@file:\/\/([^@\s]+)@?/.match(s[i..-1])
         file_curly_match = /\A@\{file:\/\/([^\}]+)\}/.match(s[i..-1])
         if file_match # inline file
           s = s[0, i] + File.read(file_match[1]) + file_match.post_match
+          i -= 1
         elsif file_curly_match # inline file with curly braces
           s = s[0, i] + File.read(file_curly_match[1]) + file_curly_match.post_match
-        elsif s[i, 2] !~ /\A@[\w{]/ # escape
+          i -= 1
+        elsif s[i, 2] =~ /\A@@/ # escape
           s = s[0, i] + s[i+1..-1]
-          i += 1
-        else
+        elsif s[i, 2] =~ /\A@(\w|\{)/
           return s[0, i], s[i..-1] # return raw, '@...'
         end
       end

@@ -38,8 +38,8 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@@hullebulle@@bla.com@@')).to eq('@hullebulle@bla.com@')
   end
 
-  it 'escapes ".[:" even if not strictly necessary' do
-    expect(interpolate('@.@[@: .[:')).to eq('.[: .[:')
+  it '@ does escape only @' do
+    expect(interpolate('@.@[@:@@.[:')).to eq('@.@[@:@.[:')
   end
 
   it 'replaces Param' do
@@ -55,7 +55,7 @@ RSpec.describe 'Interpolate' do
   end
 
   it 'expression stops at "@"' do
-    expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '::text'))
+    expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '@::text'))
   end
 
   it 'dot does not generate Fn::GetAtt outside of curly' do
