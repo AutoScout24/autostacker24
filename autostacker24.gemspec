@@ -1,7 +1,7 @@
 require 'rubygems'
 include FileUtils
 
-MINOR_VERSION = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
+BUILD = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
 
 Gem::Specification.new do |s|
   s.name           = 'autostacker24'
@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.description    = 'n/a'
   s.license        = 'MIT'
   s.files          = `git ls-files lib -z`.split("\x0") << 'license.txt'
-  s.version        = "1.0.#{MINOR_VERSION}"
+  s.version        = "2.0.#{BUILD}"
   s.executables    = ['autostacker24']
   s.add_dependency 'aws-sdk-core', '~> 2'
   s.add_dependency 'json', '~> 1.8'
