@@ -58,12 +58,20 @@ RSpec.describe 'Interpolate' do
     expect(interpolate('@Param@::text')).to eq(join({'Ref' => 'Param'}, '@::text'))
   end
 
-  it 'dot does not generate Fn::GetAtt outside of curly' do
-    expect(interpolate('@Param.domain.tld')).to eq(join({'Ref'=>'Param'}, '.domain.tld'))
+  it 'is greedy if not embedded in curlies' do
+    expect(interpolate('@Param.domain.tld')).to eq({'Fn::GetAtt' => ['Param', 'domain.tld']})
   end
 
-  it 'dot does not generate Fn::GetAtt outside of curly, embedded' do
-    expect(interpolate('bla @Param.bla bla')).to eq(join('bla ', {'Ref'=>'Param'}, '.bla bla'))
+  it 'stops expression at curly brace' do
+    expect(interpolate('@{Param}.domain.tld')).to eq(join({'Ref'=>'Param'}, '.domain.tld'))
+  end
+
+  it 'is greedy if not embedded in curlies, embedded' do
+    expect(interpolate('bla @Param.bla bla')).to eq(join('bla ', {'Fn::GetAtt' => ['Param', 'bla']}, ' bla'))
+  end
+
+  it 'stops expression at curly brace, embedded' do
+    expect(interpolate('bla @{Param}.bla bla')).to eq(join('bla ', {'Ref'=>'Param'}, '.bla bla'))
   end
 
   it 'dot does generate Fn::GetAtt in curly' do
@@ -77,22 +85,26 @@ RSpec.describe 'Interpolate' do
   end
 
   it '[top,second] generates Fn::FindInMap' do
+    expect(interpolate('@MyMap[Top, Second]')).to eq({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']})
+  end
+
+  it 'generates Fn::FindInMap from curly brace expressions' do
     expect(interpolate('@{MyMap[Top, Second]}')).to eq({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']})
   end
 
   it '[top,second] generates Fn::FindInMap embedded' do
-    expect(interpolate('@{MyMap[  Top  ,Second  ]}bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
+    expect(interpolate('@MyMap[  Top  ,Second  ]bla')).to eq(join({'Fn::FindInMap' => ['MyMap', 'Top', 'Second']}, 'bla'))
   end
 
-  it '@{Env[second]} generates Fn::FindInMap by convention' do
+  it '@Env[second] generates Fn::FindInMap by convention' do
     expect(interpolate('@{Env[Second]}')).to eq({'Fn::FindInMap' => ['EnvMap', {'Ref' => 'Env'}, 'Second']})
   end
 
-  it '@{Map[@Top, @Second]} has simple expressions as keys' do
-    expect(interpolate('@{Map[@Top, @Second]}')).to eq({'Fn::FindInMap' => ['Map', {'Ref' => 'Top'}, {'Ref' => 'Second'}]})
+  it '@Map[@Top, @Second] has simple expressions as keys' do
+    expect(interpolate('@Map[@Top, @Second]')).to eq({'Fn::FindInMap' => ['Map', {'Ref' => 'Top'}, {'Ref' => 'Second'}]})
   end
 
-  it '@{Map[@TopMap[@i2, second], @Second]} generates nested Fn::FindInMap' do
+  it '@Map[@TopMap[@i2, second], @Second] generates nested Fn::FindInMap' do
     nested_find_in_map = {
         'Fn::FindInMap' => [
             'Map',
@@ -100,7 +112,7 @@ RSpec.describe 'Interpolate' do
             {'Ref' => 'Second'}
         ]
     }
-    expect(interpolate('@{Map[@SubMap[@i2, second], @Second]}')).to eq(nested_find_in_map)
+    expect(interpolate('@Map[@SubMap[@i2, second], @Second]')).to eq(nested_find_in_map)
   end
 
   it 'ignores whitespace in brackets' do
@@ -111,7 +123,7 @@ RSpec.describe 'Interpolate' do
             {'Ref' => 'k'}
         ]
     }
-    expect(interpolate('@{m1[  @m2[ @i , j ],  @k  ]}')).to eq(find_in_map)
+    expect(interpolate('@m1[  @m2[ @i , j ],  @k  ]')).to eq(find_in_map)
   end
 
   it 'includes files with @{file} and interpolates content' do

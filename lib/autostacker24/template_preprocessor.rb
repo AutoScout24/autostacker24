@@ -111,7 +111,7 @@ module AutoStacker24
     #  the string to parse
     # embedded::
     #  whether the string is embedded in an AutoStacker24 expression already.
-    #  Embedded expressions may start with '@{', and may only start with '@'.
+    #  Embedded expressions may not start with '@{', only with '@'.
     #
     def self.parse_expr(s, embedded = false)
       return nil, s if s.length == 0
@@ -122,13 +122,7 @@ module AutoStacker24
       name, s = parse(NAME, s)
       raise "expected parameter name #{s}" unless name
 
-      if embedded
-        # try attribute, then map, then fallback to simple ref.
-        expr, s = parse_attribute(s, name)
-        expr, s = parse_map(s, name)       unless expr
-        expr, s = parse_reference(s, name) unless expr
-
-      elsif curly
+      if curly
         # try attribute, then map, then fallback to simple ref.
         expr, s = parse_attribute(s, name)
         expr, s = parse_map(s, name)       unless expr
@@ -137,8 +131,12 @@ module AutoStacker24
         closing_curly, s = parse(RIGHT_CURLY, s)
         raise "expected '}' but got #{s}" unless closing_curly
       else
-        # allow only simple ref.
-        expr, s = parse_reference(s, name)
+        # try attribute, then map, then fallback to simple ref.
+        # these are allowed in both embedded and top-level expressions
+        # starting with @...
+        expr, s = parse_attribute(s, name)
+        expr, s = parse_map(s, name)       unless expr
+        expr, s = parse_reference(s, name) unless expr
       end
 
       return expr, s
