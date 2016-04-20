@@ -57,38 +57,61 @@ For finer control Stacker offers also
 
 ## Template Preprocessing
 
-1. You can put javascript like comments in your template, even if they are are illegal in pure JSON. AutoStacker24 will remove all comments before passing the template to AWS.
+1. You can put javascript-like comments in your JSON template, even if they are
+are illegal in pure JSON. AutoStacker24 will strip all comments before passing
+the template to AWS.
 
-2. You can use YAML for writing your templates. [YAML](http://yaml.org/spec/1.2/spec.html) is a data serialization format that is structural identical with JSON but optimized for humans.
-It has support for comments and long embedded string documents which makes it is especially useful for embedded UserData.
+2. You can use YAML for writing your templates. [YAML](http://yaml.org/spec/1.2/spec.html)
+is a data serialization format that is structural identical with JSON but
+optimized for humans. It has support for comments and long embedded string
+documents which makes it is especially useful for embedded UserData.
 [Example](examples/yaml-stack.md)
 
-3. Referencing parameters and building strings is quite cumbersome in CloudFormation. AutoStacker24 gives you a more convenient syntax: Inside a string, you can reference one or more parameters with the `@` symbol without the need for complex `Fn::Join` and `Ref` constructs.
+3. Referencing parameters and building scripts and config files is quite
+cumbersome in CloudFormation. AutoStacker24 gives you a more convenient
+syntax: Inside a string, you can create simple expressions with
+the `@` symbol that will be expanded to CloudFormation's `Fn::Join`, `Ref`,
+`Fn::GetAtt`, and `Fn::FindInMap` constructs.
 
-4. For the "UserData" property you can pass a simple string that gets  auto encoded to base64. This is especially useful for templates written in yaml. You can reference a file `@file://./myscript.sh` that will be read into a simple string.
+4. For the "UserData" property you can pass a simple string that gets auto
+encoded to base64. This is especially useful for templates written in yaml. You
+can reference a file `@{file://./myscript.sh}` that will be read into a simple
+string, and processed for AutoStacker24 expression expansion.
 
-5. Instead of using Fn::FindInMap you can do something like `@EnvironmentMap[@Environment, Key]`
+### Expressions
 
-### Examples
+AutoStacker24 expressions start with the `@` symbol, and can be enclosed in
+curly braces `{}` to delimit them if their length is ambiguous.
 
-  instead of | just write
+  expression | gets expanded to
   ------------- | -------------
-  `"prop": {"Ref": "myVar"}` | `"prop": "@myVar"`
-  `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`|`"prop": "@AWS::StackName-@tableName-test"`
-  `"prop": "bla@hullebulle.org"` | `"prop": "bla@@hullebulle.org"`
-  `"UserData": {"Fn:Base64": ... }` | `"UserData": "@file://./myscript.sh"`
-  `"content": {"Fn::Join":["\n", [...]]` | `"content" : "@file://./myfile.txt"`
-  `"prop": {"Fn::FindInMap": ["RegionMap", { "Ref" : "AWS::Region" }, "32"]` | `"@RegionMap[@Region, 32]"` or `"@Region[32]`
+  `"prop": "@myVar"` | `"prop": {"Ref": "myVar"}`
+  `"prop": "@AWS::StackName-@tableName-test"` | `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`
+  `@Resource.Attrib` | `{"Fn::GetAtt": ["Resource", "Attrib"]}`
+  `"UserData": "@file://./myscript.sh"` | `"UserData": {"Fn:Base64": ... }`
+  `"content" : "@file://./myfile.txt"` | `"content": {"Fn::Join":["\n", [<file content>]]}`
+  `@RegionMap[@Region, 32]` | `{"Fn::FindInMap": ["RegionMap", {"Ref": "Region"}, "32"]}`
+  `@Region[32]` | `{"Fn::FindInMap": ["RegionMap", {"Ref": "Region"}, "32"]}`
+  `"prop": "user@@example.com"` | `"prop": "user@example.com"`
 
-By default, AutoStacker24 don't preprocess templates. If you want to use this functionality your must start your template with a comment:
+Expressions starting with `@` are greedy, and will continue until a character
+that cannot be part of a valid expression is encountered. In order to limit an
+expression, they must be enclosed in curly braces. For example, to have
+`@Subdomain.example.com` expanded as `{"Fn::Join":["",[{"Ref":"Subdomain"},".example.com"]]}`,
+it must be written as `@{Subdomain}.example.com` to explicitly limit the
+expression to a simple reference.
+
+By default, AutoStacker24 does not preprocess templates. If you want to use this
+functionality your must start your template with a comment:
 
 ```javascript
-// AutoStacker24 JSON
+// AutoStacker24 CloudFormation JSON Template
 {
   "AWSTemplateFormatVersion": "2010-09-09"
   ...
 }
 ```
+
 ```yaml
 # AutoStacker24 YAML
 AWSTemplateFormatVersion: "2010-09-09"
@@ -123,7 +146,7 @@ $ autostacker24 convert --template /path/to/template.json
 To convert a valid template from YAML to JSON
 
 ```
-$ autostacker24 convert --template /path/to/template.json --to-json
+$ autostacker24 convert --template /path/to/template.yaml
 ```
 
 To Validate a template:
@@ -136,4 +159,9 @@ To see the outcome after AutoStacker24 preprocessed your template;
 
 ```
 $ autostacker24 show --template /path/to/template.json
+```
+
+To create or update a stack
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --region eu-west-1
 ```

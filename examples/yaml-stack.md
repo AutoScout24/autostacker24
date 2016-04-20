@@ -1,6 +1,6 @@
 ## Example YAML Template
-Not that in YAML `@` is a reserved character so if it is the first character
-in a string you have to quote the string.
+Note that in YAML `@` is a reserved character so if it is the first character
+in a string you have to quote the complete string.
 
 ```yaml
 # AutoStacker24 YAML CloudFormation Template
@@ -53,18 +53,17 @@ Resources:
       IamInstanceProfile: "@InstanceProfile"
       ImageId: "@ImageId"
       InstanceMonitoring: false
-      InstanceType: "@Environment[InstanceType]"
+      InstanceType: "@{Environment[InstanceType]}"
       KeyName: instance_key
       SecurityGroups:
-      - "@Environment[InstanceSecurityGroup]"
+      - "@{Environment[InstanceSecurityGroup]}"
       - "@BastionSSH"
       UserData: |
         #!/bin/bash -xe
         aws ecr get-login --region us-east-1 | /bin/bash
         docker run -d --restart=always -e ENVIRONMENT=@Environment 1234567800.dkr.ecr.us-east-1.amazonaws.com/my-service:@Version
-        sleep 10
-        wget --retry-connrefused --tries=30 --wait=1 --timeout=1 -O - http://localhost:8080/health && SUCCESS=true || SUCCESS=false
-        /opt/aws/bin/cfn-signal --success ${SUCCESS} --stack @AWS::StackName --resource ASG --region @AWS::Region
+        wget -nv --retry-connrefused --tries=30 --wait=1 --timeout=1 -O- http://localhost:8080/health
+        /opt/aws/bin/cfn-signal -e $? --stack @AWS::StackName --resource ASG --region @AWS::Region
   ELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
@@ -93,7 +92,7 @@ Resources:
         SSLCertificateId: arn:aws:iam::1234567800:server-certificate/service
       Scheme: internet-facing
       SecurityGroups:
-      - "@Environment[ELBSecurityGroup]"
+      - "@{Environment[ELBSecurityGroup]}"
       Subnets: "@Environment[Subnets]"
       Tags:
       - Key: Name
@@ -103,7 +102,7 @@ Resources:
   ASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      AvailabilityZones: "@Environment[AvailabilityZones]"
+      AvailabilityZones: "@{Environment[AvailabilityZones]}"
       Cooldown: 600
       DesiredCapacity: 1
       HealthCheckGracePeriod: 180
@@ -120,7 +119,7 @@ Resources:
       - Key: Environment
         Value: "@Environment"
         PropagateAtLaunch: true
-      VPCZoneIdentifier: "@Environment[Subnets]"
+      VPCZoneIdentifier: "@{Environment[Subnets]}"
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MinInstancesInService: 1
@@ -141,6 +140,6 @@ Resources:
           - CanonicalHostedZoneNameID
       Comment: "@AWS::StackName"
       HostedZoneName: myorg.net.
-      Name: "@Environment[DomainName]"
+      Name: "@{Environment[DomainName]}"
       Type: A
 ```
