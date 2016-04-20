@@ -90,8 +90,8 @@ curly braces `{}` to delimit them if their length is ambiguous.
   `@Resource.Attrib` | `{"Fn::GetAtt": ["Resource", "Attrib"]}`
   `"UserData": "@file://./myscript.sh"` | `"UserData": {"Fn:Base64": ... }`
   `"content" : "@file://./myfile.txt"` | `"content": {"Fn::Join":["\n", [<file content>]]}`
-  `"@RegionMap[@Region, 32]"` | `{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
-  `"@Region[32]` | `{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
+  `@RegionMap[@Region, 32]` | `{"Fn::FindInMap": ["RegionMap", {"Ref": "Region"}, "32"]}`
+  `@Region[32]` | `{"Fn::FindInMap": ["RegionMap", {"Ref": "Region"}, "32"]}`
   `"prop": "user@@example.com"` | `"prop": "user@example.com"`
 
 Expressions starting with `@` are greedy, and will continue until a character
