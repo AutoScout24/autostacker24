@@ -87,19 +87,19 @@ curly braces `{}` to delimit them if their length is ambiguous.
   ------------- | -------------
   `"prop": "@myVar"` | `"prop": {"Ref": "myVar"}`
   `"prop": "@AWS::StackName-@tableName-test"` | `"prop": {"Fn::Join":["-",[`<br/>`{"Ref":"AWS::StackName"},{"Ref":"tableName"},"test"`<br/>`]]}`
-  `@Resource.Attrib` | `"{"Fn::GetAtt": ["Resource", "Attrib"]}`
+  `@Resource.Attrib` | `{"Fn::GetAtt": ["Resource", "Attrib"]}`
   `"UserData": "@file://./myscript.sh"` | `"UserData": {"Fn:Base64": ... }`
   `"content" : "@file://./myfile.txt"` | `"content": {"Fn::Join":["\n", [<file content>]]}`
-  `"@RegionMap[@Region, 32]"` | `"{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
-  `"@Region[32]` | `"{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
+  `"@RegionMap[@Region, 32]"` | `{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
+  `"@Region[32]` | `{"Fn::FindInMap": ["RegionMap", { "Ref" : "Region" }, "32"]}`
   `"prop": "user@@example.com"` | `"prop": "user@example.com"`
 
 Expressions starting with `@` are greedy, and will continue until a character
-that cannot be part of a valid expression. In order to limit an expression, they
-must be enclosed in curly braces. For example, to have `@Subdomain.example.com`
-expanded as `{"Fn::Join":["",[{"Ref":"Subdomain"},".example.com"]]}`, it must be
-written as `@{Subdomain}.example.com` to explicitly limit the expression to a
-simple reference.
+that cannot be part of a valid expression is encountered. In order to limit an
+expression, they must be enclosed in curly braces. For example, to have
+`@Subdomain.example.com` expanded as `{"Fn::Join":["",[{"Ref":"Subdomain"},".example.com"]]}`,
+it must be written as `@{Subdomain}.example.com` to explicitly limit the
+expression to a simple reference.
 
 By default, AutoStacker24 does not preprocess templates. If you want to use this
 functionality your must start your template with a comment:
