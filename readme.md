@@ -12,6 +12,7 @@ to humans than JSON. You can use `$ autostacker24 convert` to convert existing t
 
 ## Status
 [![Build Status](https://travis-ci.org/AutoScout24/autostacker24.svg)](https://travis-ci.org/AutoScout24/autostacker24)
+[![Gem Version](https://badge.fury.io/rb/autostacker24.svg)](https://badge.fury.io/rb/autocanary24)
 
 ## Create or Update
 ```ruby
