@@ -1,8 +1,6 @@
 require 'rubygems'
 include FileUtils
 
-BUILD = ENV['GO_PIPELINE_LABEL'] || "pre#{Time.now.tv_sec}"
-
 Gem::Specification.new do |s|
   s.name           = 'autostacker24'
   s.authors        = ['Johannes Mueller', 'Christian Rodemeyer']
