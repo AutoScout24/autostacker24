@@ -7,6 +7,8 @@ require_relative 'template_preprocessor.rb'
 STDOUT.sync = true
 STDERR.sync = true
 
+DEFAULT_TIMEOUT = 60
+
 module Stacker
 
   attr_reader :region, :credentials
@@ -26,7 +28,7 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = 60)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     if find_stack(stack_name).nil?
       create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
     else
@@ -34,7 +36,7 @@ module Stacker
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = 60)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
@@ -45,7 +47,7 @@ module Stacker
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = 60)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
@@ -91,7 +93,7 @@ module Stacker
     wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
   end
 
-  def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = 60)
+  def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = DEFAULT_TIMEOUT)
     stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     puts "waiting for #{operation} stack #{stack_name}"
