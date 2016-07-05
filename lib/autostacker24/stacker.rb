@@ -7,6 +7,8 @@ require_relative 'template_preprocessor.rb'
 STDOUT.sync = true
 STDERR.sync = true
 
+DEFAULT_TIMEOUT = 60
+
 module Stacker
 
   attr_reader :region, :credentials
@@ -26,15 +28,15 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, tags)
+      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, tags)
+      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
@@ -42,10 +44,10 @@ module Stacker
                                  parameters:    transform_input(parameters),
                                  capabilities:  ['CAPABILITY_IAM'],
                                  tags:          tags)
-    wait_for_stack(stack_name, :create)
+    wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
@@ -59,7 +61,7 @@ module Stacker
       puts "stack #{stack_name} is already up to date"
       find_stack(stack_name)
     else
-      wait_for_stack(stack_name, :update, seen_events)
+      wait_for_stack(stack_name, :update, seen_events, timeout_in_minutes)
     end
   end
 
@@ -85,14 +87,13 @@ module Stacker
     cloud_formation.validate_template(template_body: template_body(template))
   end
 
-  def delete_stack(stack_name)
+  def delete_stack(stack_name, timeout_in_minutes = 60)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     cloud_formation.delete_stack(stack_name: stack_name)
-    wait_for_stack(stack_name, :delete, seen_events)
+    wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
   end
 
-  def wait_for_stack(stack_name, operation, seen_events = Set.new)
-    timeout_in_minutes = 60 # for now
+  def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = DEFAULT_TIMEOUT)
     stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     puts "waiting for #{operation} stack #{stack_name}"
