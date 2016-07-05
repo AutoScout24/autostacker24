@@ -1,6 +1,12 @@
 Unreleased Changes
 ------------------
 
+
+2.1.0 (2016-07-05)
+------------------
+* Feature - Allowing overriding of timeouts
+  See [related GitHub pull request #27](https://github.com/AutoScout24/autostacker24/pull/27)
+
 2.0.1 (2016-05-03)
 ------------------
 * Issue - Incorrect regex for yaml detection
