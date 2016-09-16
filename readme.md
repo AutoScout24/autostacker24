@@ -156,10 +156,16 @@ To Validate a template:
 $ autostacker24 validate --template /path/to/template.json
 ```
 
-To see the outcome after AutoStacker24 preprocessed your template;
+To see the outcome after AutoStacker24 preprocessed your template as pretty printed json
 
 ```
 $ autostacker24 show --template /path/to/template.json
+```
+
+To see the outcome after AutoStacker24 preprocessed your template 
+
+```
+$ autostacker24 process --template /path/to/template.json
 ```
 
 To create or update a stack
