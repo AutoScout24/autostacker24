@@ -24,11 +24,12 @@ parser = OptionParser.new do |opts|
   opts.banner = 'Usage: autostacker24 command [options]'
   opts.separator ''
   opts.separator 'Commands:'
-  opts.separator "\tupdate\t\t create or update a stack"
-  opts.separator "\tdelete\t\t delete a stack"
-  opts.separator "\tprocess\t\t pretty print processed template"
-  opts.separator "\tvalidate\t validate the template"
-  opts.separator "\tconvert\t\t convert template to and from YAML"
+  opts.separator "\tupdate     create or update a stack"
+  opts.separator "\tdelete     delete a stack"
+  opts.separator "\tshow       show processed template with pretty printing"
+  opts.separator "\tprocess    print processed template"
+  opts.separator "\tvalidate   validate the template"
+  opts.separator "\tconvert    convert template to and from YAML"
   opts.separator ''
   opts.separator 'Options:'
   opts.on('--template TEMPLATE', 'Path to template')                {|v| args.template = v}
@@ -67,7 +68,10 @@ case args.command
   when /delete/
     check_stack(args)
     Stacker.delete_stack(args.stack)
-  when /process|show/
+  when /process/
+    check_template(args)
+    puts Stacker.template_body(args.template)
+  when /show/
     check_template(args)
     puts JSON.pretty_generate(JSON.parse(Stacker.template_body(args.template)))
   when /convert/
