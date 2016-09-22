@@ -1,6 +1,10 @@
-Unreleased Changes
+2.2.0 (2016-09-22)
 ------------------
+* Feature - Support new CloudFormation capabilities
+  See [related GitHub pull request #33](https://github.com/AutoScout24/autostacker24/pull/33) and [related GitHub issue #32](https://github.com/AutoScout24/autostacker24/issues/32)
 
+* Feature - Separate cli commands show and process
+  See [related GitHub pull request #31](https://github.com/AutoScout24/autostacker24/pull/31)
 
 2.1.0 (2016-07-05)
 ------------------
