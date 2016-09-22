@@ -42,7 +42,7 @@ module Stacker
                                  template_body: template_body(template),
                                  on_failure:    'DELETE',
                                  parameters:    transform_input(parameters),
-                                 capabilities:  ['CAPABILITY_IAM'],
+                                 capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                                  tags:          tags)
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
@@ -54,7 +54,7 @@ module Stacker
       cloud_formation.update_stack(stack_name:    stack_name,
                                    template_body: template_body(template),
                                    parameters:    transform_input(parameters),
-                                   capabilities:  ['CAPABILITY_IAM'],
+                                   capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                                    tags:          tags)
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
