@@ -1,3 +1,8 @@
+2.3.0 (2016-09-26)
+------------------
+* Issue - Optimize YAML support
+  See [related GitHub pull request #34](https://github.com/AutoScout24/autostacker24/pull/34) 
+
 2.2.0 (2016-09-22)
 ------------------
 * Feature - Support new CloudFormation capabilities
