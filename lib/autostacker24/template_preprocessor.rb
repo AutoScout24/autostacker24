@@ -8,12 +8,12 @@ module AutoStacker24
   module Preprocessor
 
     def self.preprocess(template)
-      if template =~ /\A\s*\{/
-        template
-      elsif template =~ /\A\s*\/{2}/
+      if template =~ /\A\s*\/{2}/
         preprocess_json(parse_json(template)).to_json
-      else
+      elsif template =~ /\A\s*#/
         preprocess_json(parse_yaml(template)).to_json
+      else
+        template
       end
     end
 
