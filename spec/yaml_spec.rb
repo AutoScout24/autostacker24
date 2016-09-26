@@ -2,6 +2,45 @@ require 'spec_helper'
 require 'yaml'
 
 
+RSpec.describe 'Keep YAML' do
+
+  let(:template) do
+    <<-EOL
+    AWSTemplateFormatVersion: "2010-09-09"
+    Description: My Stack
+    Parameters:
+      Environment: # Some Comments
+        Type: "String"
+        AllowedValues:
+          - Staging
+          - Production
+      DBName:
+        Type: String
+        Default: my-db
+        Priority: 5
+    Text: |
+      some very long
+      text splitted over
+      lines
+    StackName: !Ref AWS::StackName
+    UserData: |
+      #!/bin/bash
+      echo "@Environment"
+      exit 42
+    EOL
+  end
+
+  subject(:parsed) do
+    YAML.load(Stacker.template_body(template))
+  end
+
+  it 'does not manipulate the template' do
+    expect(parsed['UserData']).to eq("#!/bin/bash\necho \"@Environment\"\nexit 42\n")
+  end
+
+end
+
+
 RSpec.describe 'YAML to JSON' do
 
   let(:template) do
