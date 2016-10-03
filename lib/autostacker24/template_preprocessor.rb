@@ -26,7 +26,32 @@ module AutoStacker24
     end
 
     def self.parse_yaml(template)
-      YAML.load(template)
+      transform_tags_to_functions(YAML.parse(template)).to_ruby
+    end
+
+    def self.transform_tags_to_functions(node)
+      children = node.children
+      children.each_index{|i| children[i] = transform_tags_to_functions(children[i])} if children
+      node = make_function_node(node) if node.tag
+      node
+    end
+
+    def self.make_function_node(node)
+      transformed = Psych::Nodes::Mapping.new()
+      fn = node.tag[1..-1]
+      fn = "Fn::#{fn}" unless fn == 'Ref' # Exception 1: Ref must not be prefixed with Fn::
+      node.tag = nil
+      transformed.children << Psych::Nodes::Scalar.new(fn)
+      unless fn == 'Fn::GetAtt' # Ecxeption 2: GetAtt has different arguments in short form
+        args = node
+      else
+        resource, attribute = node.value.split('.')
+        args = Psych::Nodes::Sequence.new(fn)
+        args.children << Psych::Nodes::Scalar.new(resource)
+        args.children << Psych::Nodes::Scalar.new(attribute)
+      end
+      transformed.children << args
+      transformed
     end
 
     def self.preprocess_json(json)
