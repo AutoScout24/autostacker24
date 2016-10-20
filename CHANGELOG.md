@@ -1,3 +1,8 @@
+2.4.0 (2016-10-20)
+------------------
+* Issue - Compatibility with CloudFormation YAML
+  See [related GitHub pull request #35](https://github.com/AutoScout24/autostacker24/pull/35) 
+
 2.3.0 (2016-09-26)
 ------------------
 * Issue - Optimize YAML support
