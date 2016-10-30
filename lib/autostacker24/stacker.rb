@@ -182,8 +182,14 @@ module Stacker
   end
 
   def template_body(template)
-    template = File.read(template) if File.exists?(template)
+    wd = Dir.getwd()
+    if File.exists?(template) # template is a valid filename
+      template = File.read(template)
+      Dir.chdir(File.dirname(template))
+    end
     AutoStacker24::Preprocessor.preprocess(template)
+  ensure
+    Dir.chdir(wd)
   end
 
   extend self
