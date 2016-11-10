@@ -29,41 +29,67 @@ module Stacker
   end
 
   def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
-    if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
+    stop_time = Time.now + timeout_in_minutes * 60
+
+    if retry_on_rate_exceed(stop_time) { find_stack(stack_name).nil? }
+      create_stack_until(stack_name, template, parameters, parent_stack_name, tags, stop_time)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
+      update_stack_until(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
     end
   end
 
   def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
-    merge_and_validate(template, parameters, parent_stack_name)
-    cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body(template),
-                                 on_failure:    'DELETE',
-                                 parameters:    transform_input(parameters),
-                                 capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                                 tags:          tags)
-    wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
+    stop_time = Time.now + timeout_in_minutes * 60
+    create_stack_until(stack_name, template, parameters, parent_stack_name, tags, stop_time)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
-    seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
-    begin
+  def create_stack_until(stack_name, template, parameters, parent_stack_name, tags, stop_time)
+    retry_on_rate_exceed(stop_time) do
       merge_and_validate(template, parameters, parent_stack_name)
-      cloud_formation.update_stack(stack_name:    stack_name,
+    end
+    retry_on_rate_exceed(stop_time) do
+      cloud_formation.create_stack(stack_name:    stack_name,
                                    template_body: template_body(template),
+                                   on_failure:    'DELETE',
                                    parameters:    transform_input(parameters),
                                    capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                                    tags:          tags)
+    end
+    wait_for_stack_until(stack_name, :create, Set.new, stop_time)
+  end
+  private :create_stack_until
+
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+    stop_time = Time.now + timeout_in_minutes * 60
+    update_stack_until(stack_name, template, parameters, parent_stack_name, tags, stop_time)
+  end
+
+  def update_stack_until(stack_name, template, parameters, parent_stack_name, tags, stop_time)
+    seen_events = retry_on_rate_exceed(stop_time) do
+      get_stack_events(stack_name).map {|e| e[:event_id]}
+    end
+    begin
+      retry_on_rate_exceed(stop_time) do
+        merge_and_validate(template, parameters, parent_stack_name)
+      end
+      retry_on_rate_exceed(stop_time) do
+        cloud_formation.update_stack(stack_name:    stack_name,
+                                     template_body: template_body(template),
+                                     parameters:    transform_input(parameters),
+                                     capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                     tags:          tags)
+      end
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       puts "stack #{stack_name} is already up to date"
-      find_stack(stack_name)
+      retry_on_rate_exceed(stop_time) do
+        find_stack(stack_name)
+      end
     else
-      wait_for_stack(stack_name, :update, seen_events, timeout_in_minutes)
+      wait_for_stack_until(stack_name, :update, seen_events, stop_time)
     end
   end
+  private :update_stack_until
 
   # if stack_name is given assign read the output parameters and copy them to the given template parameters
   # if a aparameter is already defined, it will not be overwritten
@@ -94,21 +120,28 @@ module Stacker
   end
 
   def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = DEFAULT_TIMEOUT)
-    stop_time   = Time.now + timeout_in_minutes * 60
+    stop_time = Time.now + timeout_in_minutes * 60
+    wait_for_stack_until(stack_name, operation, seen_events, stop_time)
+  end
+
+  def wait_for_stack_until(stack_name, operation, seen_events, stop_time)
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     puts "waiting for #{operation} stack #{stack_name}"
-    stack_id = find_stack(stack_name)[:stack_id]
+    stack_id = retry_on_rate_exceed(stop_time) { find_stack(stack_name)[:stack_id] }
 
     while Time.now < stop_time
       sleep(5)
-      stack = find_stack(stack_name)
+      stack = retry_on_rate_exceed(stop_time) { find_stack(stack_name) }
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
       expected_status = case operation
                           when :create then /CREATE_COMPLETE$/
                           when :update then /UPDATE_COMPLETE$/
                           when :delete then /DELETE_COMPLETE$/
                         end
-      new_events = get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
+      new_events = retry_on_rate_exceed(stop_time) do
+        get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
+      end
+
       new_events.each do |e|
         seen_events << e[:event_id]
         puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
@@ -118,6 +151,7 @@ module Stacker
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
   end
+  private :wait_for_stack_until
 
   def get_template(stack_name)
     cloud_formation.get_template(stack_name: stack_name).template_body
@@ -184,6 +218,21 @@ module Stacker
   def template_body(template)
     template = File.read(template) if File.exists?(template)
     AutoStacker24::Preprocessor.preprocess(template)
+  end
+
+  def retry_on_rate_exceed(stop_time)
+    wait_time = 5
+    while true
+      begin
+        return yield
+      rescue Aws::CloudFormation::Errors::Throttling => e
+        raise e if Time.now > stop_time
+        puts "Rate limit exceeded, retrying in #{wait_time} seconds..."
+        sleep wait_time
+        time_left = stop_time - Time.now
+        wait_time = [wait_time * 2, time_left].min.round
+      end
+    end
   end
 
   extend self
