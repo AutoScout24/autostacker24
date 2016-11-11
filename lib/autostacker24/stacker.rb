@@ -28,6 +28,14 @@ module Stacker
     end
   end
 
+  # set custom cloudformation parameters
+  def cloud_formation_params=(params)
+    unless params == @cloud_formation_params
+      @lazy_cloud_formation = nil
+      @cloud_formation_params = params
+    end
+  end
+
   def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     if find_stack(stack_name).nil?
       create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
@@ -173,7 +181,7 @@ module Stacker
 
   def cloud_formation # lazy CloudFormation client
     unless @lazy_cloud_formation
-      params = {}
+      params = @cloud_formation_params || {}
       params[:credentials] = @credentials if @credentials
       params[:region] = @region if @region
       @lazy_cloud_formation = Aws::CloudFormation::Client.new(params)
