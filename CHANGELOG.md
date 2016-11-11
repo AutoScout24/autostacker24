@@ -1,3 +1,11 @@
+2.5.0 (2016-11-11)
+------------------
+* Feature - Allow to pass in custom cloudformation parameters
+  See [related GitHub pull request #41](https://github.com/AutoScout24/autostacker24/pull/41) 
+
+* Issue - Fix relative file includes
+  See [related GitHub pull request #39](https://github.com/AutoScout24/autostacker24/pull/39) 
+
 2.4.0 (2016-10-20)
 ------------------
 * Issue - Compatibility with CloudFormation YAML
