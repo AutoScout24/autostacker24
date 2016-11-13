@@ -18,12 +18,12 @@ RSpec.describe 'Stacker Template Processing' do
       "content" : { "Fn::Join" : ["", ["[general]\\n", "state_file = /var/lib/awslogs/agent-state\\n", "\\n"]]},
       "single_colon": "@AWS::Stack:something@Other",
       "file_include": {
-        "UserData": "@file://./spec/example_script.sh",
-        "NonUserData": "@file://./spec/example_script.sh"
+        "UserData": "@file://./spec/examples/script.sh",
+        "NonUserData": "@file://./spec/examples/script.sh"
       },
       "file_curly_include": {
-        "UserData": "@{file://./spec/example_script.sh}",
-        "NonUserData": "@{file://./spec/example_script.sh}"
+        "UserData": "@{file://./spec/examples/script.sh}",
+        "NonUserData": "@{file://./spec/examples/script.sh}"
       },
       "auto_encode": {
         "UserData": "auto encode"
