@@ -1,0 +1,3 @@
+# AutoStacker24 enabled CloudFormation template
+Include:
+  File: "@file://include.sh"
