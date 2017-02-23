@@ -1,3 +1,8 @@
+2.6.0 (2017-02-23)
+------------------
+* Feature - Add --params parameter to load template parameters from file
+  See [related GitHub pull request #43](https://github.com/AutoScout24/autostacker24/pull/44)
+
 2.5.0 (2016-11-11)
 ------------------
 * Feature - Allow to pass in custom cloudformation parameters
