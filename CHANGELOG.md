@@ -1,3 +1,8 @@
+2.7.0 (2017-03-21)
+------------------
+* Feature - Use AWS_SHARED_CREDENTIALS_FILE environment variable to overwrite path of shared credential file
+  See [related GitHub pull request #46](https://github.com/AutoScout24/autostacker24/pull/46)
+
 2.6.0 (2017-02-23)
 ------------------
 * Feature - Add --params parameter to load template parameters from file
