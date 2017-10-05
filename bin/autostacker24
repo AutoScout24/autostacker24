@@ -45,6 +45,7 @@ parser = OptionParser.new do |opts|
   opts.on('--template TEMPLATE', 'Path to template')                    {|v| args.template = v}
   opts.on('--stack STACK',       'Name of stack')                       {|v| args.stack = v}
   opts.on('--parent PARENT',     'Name of parent stack')                {|v| args.parent = v}
+  opts.on('--role-arn ROLE-ARN', 'Arn of execution role')               {|v| args.role_arn = v}
   opts.on('--region REGION',     'AWS region')                          {|v| args.region = v}
   opts.on('--profile PROFILE',   'AWS profile (use aws configure)')     {|v| args.profile = v}
   opts.on('--param KEY=VALUE',   'Stack Parameter')                     {|v| args.params.store(*v.split('=')) }
@@ -75,10 +76,10 @@ case args.command
   when /create|update|create_or_update/
     check_template(args)
     check_stack(args)
-    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent)
+    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent, args.role_arn)
   when /delete/
     check_stack(args)
-    Stacker.delete_stack(args.stack)
+    Stacker.delete_stack(args.stack, args.role_arn)
   when /process/
     check_template(args)
     puts Stacker.template_body(args.template)
