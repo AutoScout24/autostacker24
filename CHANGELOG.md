@@ -1,3 +1,14 @@
+2.8.0 (2017-10-27)
+------------------
+* Feature - Support role arn for deployments
+  See [related GitHub pull request #47](https://github.com/AutoScout24/autostacker24/pull/47)
+
+* Feature - Allow listing stacks from cli
+  See [related GitHub pull request #49](https://github.com/AutoScout24/autostacker24/pull/49)
+
+* Issue - Fail on empty values for --param parameter
+  See [related GitHub pull request #48](https://github.com/AutoScout24/autostacker24/pull/48)
+
 2.7.0 (2017-03-21)
 ------------------
 * Feature - Use AWS_SHARED_CREDENTIALS_FILE environment variable to overwrite path of shared credential file
