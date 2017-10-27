@@ -27,6 +27,12 @@ def load_file(path)
   json?(data) ? JSON.parse(data) : YAML.load(data)
 end
 
+def validate_param(param)
+  kv = param.split('=', 2)
+  error("parameter #{param} is missing mandatory value") unless kv.size == 2
+  kv
+end
+
 args = OpenStruct.new
 args.region = ENV['AWS_REGION']
 args.params = {}
@@ -48,7 +54,7 @@ parser = OptionParser.new do |opts|
   opts.on('--parent PARENT',     'Name of parent stack')                {|v| args.parent = v}
   opts.on('--region REGION',     'AWS region')                          {|v| args.region = v}
   opts.on('--profile PROFILE',   'AWS profile (use aws configure)')     {|v| args.profile = v}
-  opts.on('--param KEY=VALUE',   'Stack Parameter')                     {|v| args.params.store(*v.split('=')) }
+  opts.on('--param KEY=VALUE',   'Stack Parameter')                     {|v| args.params.store(*validate_param(v)) }
   opts.on('--params FILE',       'Stack Parameter from yaml/json file') {|v| args.params.merge!(load_file(v)) }
   opts.on('--help',              'Show this help')                      {|_| puts opts; exit!;}
   opts.on('--version',           'Show version')                        {|_| puts `gem list autostacker24`; exit!;}
