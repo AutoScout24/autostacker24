@@ -36,26 +36,27 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
+      create_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes)
+      update_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
                                  on_failure:    'DELETE',
                                  parameters:    transform_input(parameters),
                                  capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                 role_arn:      role_arn,
                                  tags:          tags)
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
@@ -63,6 +64,7 @@ module Stacker
                                    template_body: template_body(template),
                                    parameters:    transform_input(parameters),
                                    capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                   role_arn:      role_arn,
                                    tags:          tags)
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
@@ -111,9 +113,9 @@ module Stacker
     cloud_formation.validate_template(template_body: template_body(template))
   end
 
-  def delete_stack(stack_name, timeout_in_minutes = 60)
+  def delete_stack(stack_name, role_arn = nil, timeout_in_minutes = 60)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
-    cloud_formation.delete_stack(stack_name: stack_name)
+    cloud_formation.delete_stack(stack_name: stack_name, role_arn: role_arn)
     wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
   end
 
