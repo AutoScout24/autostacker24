@@ -40,6 +40,7 @@ parser = OptionParser.new do |opts|
   opts.banner = 'Usage: autostacker24 command [options]'
   opts.separator ''
   opts.separator 'Commands:'
+  opts.separator "\tlist       list stacks"
   opts.separator "\tupdate     create or update a stack"
   opts.separator "\tdelete     delete a stack"
   opts.separator "\tshow       show processed template with pretty printing"
@@ -82,6 +83,8 @@ case args.command
     check_template(args)
     check_stack(args)
     Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent)
+  when /list/
+    Stacker.list_stacks()
   when /delete/
     check_stack(args)
     Stacker.delete_stack(args.stack)

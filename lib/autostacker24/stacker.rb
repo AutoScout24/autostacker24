@@ -73,6 +73,22 @@ module Stacker
     end
   end
 
+  def list_stacks()
+    next_token = nil
+    loop do
+      res = cloud_formation.list_stacks(next_token: next_token)
+      res.stack_summaries.each { |summary| print_stack_summary(summary) }
+
+      next_token = res.next_token
+      break if next_token.nil?
+    end
+  end
+
+  def print_stack_summary(summary)
+    change_date = summary.last_updated_time ? summary.last_updated_time : summary.creation_time
+    puts "#{summary.stack_name}\t#{summary.stack_status}\t#{change_date}" unless summary.stack_status == 'DELETE_COMPLETE'
+  end
+
   # if stack_name is given assign read the output parameters and copy them to the given template parameters
   # if a aparameter is already defined, it will not be overwritten
   # finally, if mandatory parameters are missing, an error will be raised
