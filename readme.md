@@ -172,3 +172,9 @@ To create or update a stack
 ```
 $ autostacker24 update --stack MyStack --template /path/to/template.yaml --region eu-west-1
 ```
+
+## Releases
+* Update version in `autostacker24.gemspec` file
+* Add new section in `CHANGELOG.md`
+* Commit changes
+* Run `bundle exec rake publish`
