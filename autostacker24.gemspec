@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.version        = "2.8.0"
   s.executables    = ['autostacker24']
 
-  s.add_dependency 'aws-sdk', '~> 3'
+  s.add_dependency 'aws-sdk-cloudformation', '~> 1'
   s.add_dependency 'json', '~> 2'
   s.add_dependency 'json_pure', '~> 2'
 
