@@ -1,3 +1,8 @@
+2.8.1 (2017-12-13)
+------------------
+* Issue - autostacker24 depends only on aws-sdk-cloudformation
+  See [related GitHub pull request #52](https://github.com/AutoScout24/autostacker24/pull/52)
+
 2.8.0 (2017-10-27)
 ------------------
 * Feature - Support role arn for deployments
