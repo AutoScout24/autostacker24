@@ -172,3 +172,23 @@ To create or update a stack
 ```
 $ autostacker24 update --stack MyStack --template /path/to/template.yaml --region eu-west-1
 ```
+
+To create or update a stack and pass two params to template
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --param myparam1=myvalue1 --param myparam2=myvalue2
+```
+
+To create or update a stack and pass params from params file (can be json or yaml)
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --params /path/to/params.json
+```
+
+To create or update a stack and add two default tags to each resource
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --tag mytag1=myvalue1 --tag mytag2=myvalue2
+```
+
+To create or update a stack and add tags from tags file (can be json or yaml) to each resource
+```
+$ autostacker24 update --stack MyStack --template /path/to/template.yaml --tags /path/to/tags.json
+```

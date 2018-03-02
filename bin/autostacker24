@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-
 require 'optparse'
 require 'autostacker24'
 require 'yaml'
@@ -22,12 +21,12 @@ def json?(data)
 end
 
 def load_file(path)
-  error('params file not found') unless File.exists?(path)
+  error("file #{path} not found") unless File.exists?(path)
   data = File.read(path)
   json?(data) ? JSON.parse(data) : YAML.load(data)
 end
 
-def validate_param(param)
+def validate_key_value(param)
   kv = param.split('=', 2)
   error("parameter #{param} is missing mandatory value") unless kv.size == 2
   kv
@@ -36,6 +35,8 @@ end
 args = OpenStruct.new
 args.region = ENV['AWS_REGION']
 args.params = {}
+args.tags = {}
+
 parser = OptionParser.new do |opts|
   opts.banner = 'Usage: autostacker24 command [options]'
   opts.separator ''
@@ -55,8 +56,10 @@ parser = OptionParser.new do |opts|
   opts.on('--role-arn ROLE-ARN', 'Arn of execution role')               {|v| args.role_arn = v}
   opts.on('--region REGION',     'AWS region')                          {|v| args.region = v}
   opts.on('--profile PROFILE',   'AWS profile (use aws configure)')     {|v| args.profile = v}
-  opts.on('--param KEY=VALUE',   'Stack Parameter')                     {|v| args.params.store(*validate_param(v)) }
+  opts.on('--param KEY=VALUE',   'Stack Parameter')                     {|v| args.params.store(*validate_key_value(v)) }
   opts.on('--params FILE',       'Stack Parameter from yaml/json file') {|v| args.params.merge!(load_file(v)) }
+  opts.on('--tag KEY=VALUE',     'Stack Tag')                           {|v| args.tags.store(*validate_key_value(v)) }
+  opts.on('--tags FILE',         'Stack Tags from yaml/json file')      {|v| args.tags.merge!(load_file(v)) }
   opts.on('--help',              'Show this help')                      {|_| puts opts; exit!;}
   opts.on('--version',           'Show version')                        {|_| puts `gem list autostacker24`; exit!;}
   opts.separator ''
@@ -83,7 +86,7 @@ case args.command
   when /create|update|create_or_update/
     check_template(args)
     check_stack(args)
-    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent, role_arn: args.role_arn)
+    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent, args.tags, role_arn: args.role_arn)
   when /list/
     Stacker.list_stacks()
   when /delete/
@@ -107,4 +110,3 @@ case args.command
   else
     error("unknown command '#{args.command}'")
 end
-
