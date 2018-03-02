@@ -49,10 +49,10 @@ module Stacker
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
                                  on_failure:    'DELETE',
-                                 parameters:    transform_input(parameters),
+                                 parameters:    transform_params(parameters),
                                  capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                                  role_arn:      role_arn,
-                                 tags:          tags)
+                                 tags:          transform_tags(tags))
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
@@ -62,10 +62,10 @@ module Stacker
       merge_and_validate(template, parameters, parent_stack_name)
       cloud_formation.update_stack(stack_name:    stack_name,
                                    template_body: template_body(template),
-                                   parameters:    transform_input(parameters),
+                                   parameters:    transform_params(parameters),
                                    capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                                    role_arn:      role_arn,
-                                   tags:          tags)
+                                   tags:          transform_tags(tags))
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       puts "stack #{stack_name} is already up to date"
@@ -166,7 +166,7 @@ module Stacker
 
   def estimate_template_cost(template, parameters, parent_stack_name = nil)
     merge_and_validate(template, parameters, parent_stack_name)
-    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_input(parameters))
+    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_params(parameters))
   end
 
   def get_stack_outputs(stack_name)
@@ -183,9 +183,14 @@ module Stacker
     output.inject({}) { |m, o| m.merge(o.output_key.to_sym => o.output_value) }
   end
 
-  def transform_input(input)
+  def transform_params(input)
     input.each{|k,v| raise "#{k} must not be nil" if v.nil? }
     input.inject([]) { |m, kv| m << {parameter_key: kv[0].to_s, parameter_value: kv[1].to_s} }
+  end
+
+  def transform_tags(input)
+    input.each{|k,v| raise "#{k} must not be nil" if v.nil? }
+    input.inject([]) { |m, kv| m << {key: kv[0].to_s, value: kv[1].to_s} }
   end
 
   def get_stack_resources(stack_name)
