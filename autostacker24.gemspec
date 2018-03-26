@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'aws-sdk-cloudformation', '~> 1'
   s.add_dependency 'json', '~> 2'
   s.add_dependency 'json_pure', '~> 2'
+  s.add_dependency 'retriable', '~> 3.1'
 
   s.add_development_dependency 'rubocop', '~> 0.49'
   s.add_development_dependency 'rake', '~> 12'

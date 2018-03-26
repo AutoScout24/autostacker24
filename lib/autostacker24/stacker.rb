@@ -1,5 +1,6 @@
 require 'aws-sdk-cloudformation'
 require 'set'
+require 'retriable'
 
 require_relative 'template_preprocessor.rb'
 
@@ -120,13 +121,11 @@ module Stacker
   end
 
   def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = DEFAULT_TIMEOUT)
-    stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     puts "waiting for #{operation} stack #{stack_name}"
     stack_id = find_stack(stack_name)[:stack_id]
 
-    while Time.now < stop_time
-      sleep(5)
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1, timeout: timeout_in_minutes * 60) do
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
       expected_status = case operation
