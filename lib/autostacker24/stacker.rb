@@ -47,13 +47,15 @@ module Stacker
 
   def create_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
     merge_and_validate(template, parameters, parent_stack_name)
-    cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body(template),
-                                 on_failure:    'DELETE',
-                                 parameters:    transform_input(parameters),
-                                 capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                                 role_arn:      role_arn,
-                                 tags:          tags)
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.create_stack(stack_name:    stack_name,
+                                   template_body: template_body(template),
+                                   on_failure:    'DELETE',
+                                   parameters:    transform_input(parameters),
+                                   capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                   role_arn:      role_arn,
+                                   tags:          tags)
+    end
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
@@ -61,12 +63,14 @@ module Stacker
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
-      cloud_formation.update_stack(stack_name:    stack_name,
-                                   template_body: template_body(template),
-                                   parameters:    transform_input(parameters),
-                                   capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                                   role_arn:      role_arn,
-                                   tags:          tags)
+      Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+        cloud_formation.update_stack(stack_name:    stack_name,
+                                     template_body: template_body(template),
+                                     parameters:    transform_input(parameters),
+                                     capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                     role_arn:      role_arn,
+                                     tags:          tags)
+      end
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       puts "stack #{stack_name} is already up to date"
@@ -79,7 +83,9 @@ module Stacker
   def list_stacks()
     next_token = nil
     loop do
-      res = cloud_formation.list_stacks(next_token: next_token)
+      Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+        res = cloud_formation.list_stacks(next_token: next_token)
+      end
       res.stack_summaries.each { |summary| print_stack_summary(summary) }
 
       next_token = res.next_token
@@ -111,48 +117,55 @@ module Stacker
   private :merge_and_validate
 
   def validate_template(template)
-    cloud_formation.validate_template(template_body: template_body(template))
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.validate_template(template_body: template_body(template))
+    end
   end
 
   def delete_stack(stack_name, role_arn = nil, timeout_in_minutes = 60)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
-    cloud_formation.delete_stack(stack_name: stack_name, role_arn: role_arn)
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.delete_stack(stack_name: stack_name, role_arn: role_arn)
+    end
     wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
   end
 
   def wait_for_stack(stack_name, operation, seen_events = Set.new, timeout_in_minutes = DEFAULT_TIMEOUT)
+    stop_time   = Time.now + timeout_in_minutes * 60
     finished    = /(CREATE_COMPLETE|UPDATE_COMPLETE|DELETE_COMPLETE|ROLLBACK_COMPLETE|ROLLBACK_FAILED|CREATE_FAILED|DELETE_FAILED)$/
     puts "waiting for #{operation} stack #{stack_name}"
     stack_id = find_stack(stack_name)[:stack_id]
 
-    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1, timeout: timeout_in_minutes * 60) do
-      while true
-        sleep 5
-        stack = find_stack(stack_name)
-        status = stack ? stack.stack_status : 'DELETE_COMPLETE'
-        expected_status = case operation
-                            when :create then /CREATE_COMPLETE$/
-                            when :update then /UPDATE_COMPLETE$/
-                            when :delete then /DELETE_COMPLETE$/
-                          end
-        new_events = get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
-        new_events.each do |e|
-          seen_events << e[:event_id]
-          puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
-        end
-        return true if status =~ expected_status
-        raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
+    while Time.now < stop_time
+      sleep(5)
+      stack = find_stack(stack_name)
+      status = stack ? stack.stack_status : 'DELETE_COMPLETE'
+      expected_status = case operation
+                          when :create then /CREATE_COMPLETE$/
+                          when :update then /UPDATE_COMPLETE$/
+                          when :delete then /DELETE_COMPLETE$/
+                        end
+      new_events = get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
+      new_events.each do |e|
+        seen_events << e[:event_id]
+        puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
       end
+      return true if status =~ expected_status
+      raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
   end
 
   def get_template(stack_name)
-    cloud_formation.get_template(stack_name: stack_name).template_body
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.get_template(stack_name: stack_name).template_body
+    end
   end
 
   def find_stack(stack_name)
-    cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.describe_stacks(stack_name: stack_name).stacks.first
+    end
   rescue Aws::CloudFormation::Errors::ValidationError => error
     raise error unless error.message =~ /does not exist/i # may be flaky, do more research in API
     nil
@@ -163,12 +176,16 @@ module Stacker
   end
 
   def all_stacks
-    cloud_formation.describe_stacks.stacks
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.describe_stacks.stacks
+    end
   end
 
   def estimate_template_cost(template, parameters, parent_stack_name = nil)
     merge_and_validate(template, parameters, parent_stack_name)
-    cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_input(parameters))
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.estimate_template_cost(:template_body => template_body(template), :parameters => transform_input(parameters))
+    end
   end
 
   def get_stack_outputs(stack_name)
@@ -191,12 +208,16 @@ module Stacker
   end
 
   def get_stack_resources(stack_name)
-    resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
+    end
     resources.inject({}){|map, resource| map.merge(resource.logical_resource_id.to_sym => resource)}.freeze
   end
 
   def get_stack_events(stack_name_or_id)
-    cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
+    Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
+      cloud_formation.describe_stack_events(stack_name: stack_name_or_id).data.stack_events
+    end
   end
 
   def cloud_formation # lazy CloudFormation client
