@@ -126,20 +126,23 @@ module Stacker
     stack_id = find_stack(stack_name)[:stack_id]
 
     Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1, timeout: timeout_in_minutes * 60) do
-      stack = find_stack(stack_name)
-      status = stack ? stack.stack_status : 'DELETE_COMPLETE'
-      expected_status = case operation
-                          when :create then /CREATE_COMPLETE$/
-                          when :update then /UPDATE_COMPLETE$/
-                          when :delete then /DELETE_COMPLETE$/
-                        end
-      new_events = get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
-      new_events.each do |e|
-        seen_events << e[:event_id]
-        puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
+      while true
+        sleep 5
+        stack = find_stack(stack_name)
+        status = stack ? stack.stack_status : 'DELETE_COMPLETE'
+        expected_status = case operation
+                            when :create then /CREATE_COMPLETE$/
+                            when :update then /UPDATE_COMPLETE$/
+                            when :delete then /DELETE_COMPLETE$/
+                          end
+        new_events = get_stack_events(stack_id).select{|e| !seen_events.include?(e[:event_id])}.sort_by{|e| e[:timestamp]}
+        new_events.each do |e|
+          seen_events << e[:event_id]
+          puts "#{e[:timestamp]}\t#{e[:resource_status].ljust(20)}\t#{e[:resource_type].ljust(40)}\t#{e[:logical_resource_id].ljust(30)}\t#{e[:resource_status_reason]}"
+        end
+        return true if status =~ expected_status
+        raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
       end
-      return true if status =~ expected_status
-      raise "#{operation} #{stack_name} failed, current status #{status}" if status =~ finished
     end
     raise "waiting for #{operation} stack #{stack_name} timed out after #{timeout_in_minutes} minutes"
   end
