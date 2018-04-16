@@ -83,6 +83,7 @@ module Stacker
   def list_stacks()
     next_token = nil
     loop do
+      res = {}
       Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
         res = cloud_formation.list_stacks(next_token: next_token)
       end
@@ -208,6 +209,7 @@ module Stacker
   end
 
   def get_stack_resources(stack_name)
+    resources = {}
     Retriable.retriable(on: Aws::CloudFormation::Errors::Throttling, tries: 5, base_interval: 1) do
       resources = cloud_formation.describe_stack_resources(stack_name: stack_name).data.stack_resources
     end
