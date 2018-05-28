@@ -36,36 +36,38 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, rollback_configuration = nil)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
+      create_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes, rollback_configuration)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
+      update_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes, rollback_configuration)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, rollback_configuration = nil)
     merge_and_validate(template, parameters, parent_stack_name)
-    cloud_formation.create_stack(stack_name:    stack_name,
-                                 template_body: template_body(template),
-                                 on_failure:    'DELETE',
-                                 parameters:    transform_input(parameters),
-                                 capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                                 role_arn:      role_arn,
-                                 tags:          tags)
+    cloud_formation.create_stack(stack_name:             stack_name,
+                                 template_body:          template_body(template),
+                                 on_failure:            'DELETE',
+                                 parameters:             transform_input(parameters),
+                                 capabilities:           ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                 role_arn:               role_arn,
+                                 tags:                   tags,
+                                 rollback_configuration: rollback_configuration)
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, rollback_configuration = nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
-      cloud_formation.update_stack(stack_name:    stack_name,
-                                   template_body: template_body(template),
-                                   parameters:    transform_input(parameters),
-                                   capabilities:  ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                                   role_arn:      role_arn,
-                                   tags:          tags)
+      cloud_formation.update_stack(stack_name:             stack_name,
+                                   template_body:          template_body(template),
+                                   parameters:             transform_input(parameters),
+                                   capabilities:           ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                                   role_arn:               role_arn,
+                                   tags:                   tags,
+                                   rollback_configuration: rollback_configuration)
     rescue Aws::CloudFormation::Errors::ValidationError => error
       raise error unless error.message =~ /No updates are to be performed/i # may be flaky, do more research in API
       puts "stack #{stack_name} is already up to date"
