@@ -1,3 +1,8 @@
+2.8.2 (2018-07-23)
+------------------
+* Issue - Avoid throtteling of cfn api calls by AWS
+  See [related GitHub issue #54](https://github.com/AutoScout24/autostacker24/issues/54)
+
 2.8.1 (2017-12-13)
 ------------------
 * Issue - autostacker24 depends only on aws-sdk-cloudformation
