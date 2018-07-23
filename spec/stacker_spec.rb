@@ -23,7 +23,7 @@ RSpec.describe Stacker do
           Environment: # Some Comments
             Type: String
             Default: Staging
-        EOL
+      EOL
       JSON.parse(Stacker.template_body(template))
       expect(wd).to eq(Dir.getwd())
     end
@@ -33,6 +33,25 @@ RSpec.describe Stacker do
       expect(json['Include']['File']).to eq("#!/usr/bin/env bash\necho \"bla\"")
     end
 
+    it 'should transform single tags to expected format' do
+      input = {'key1' => 'value1'}
+      expect(Stacker.transform_tags(input)).to eq([{key: 'key1', value: 'value1'}])
+    end
+
+    it 'should transform multiple tags to expected format' do
+      input = {'key1' => 'value1', 'key2' => 'value2'}
+      expect(Stacker.transform_tags(input)).to eq([{key: 'key1', value: 'value1'},{key: 'key2', value: 'value2'}])
+    end
+
+    it 'should reject nil value tags' do
+      input = {'key1' => nil}
+      expect {Stacker.transform_tags(input)}.to raise_error(RuntimeError,'key1 must not be nil')
+    end
+
+    it 'should work with empty tags' do
+      input = {}
+      expect(Stacker.transform_tags(input)).to eq([])
+    end
   end
 
 end
