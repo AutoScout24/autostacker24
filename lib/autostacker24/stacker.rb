@@ -126,7 +126,7 @@ module Stacker
     stack_id = find_stack(stack_name)[:stack_id]
 
     while Time.now < stop_time
-      sleep(5)
+      sleep(10)
       stack = find_stack(stack_name)
       status = stack ? stack.stack_status : 'DELETE_COMPLETE'
       expected_status = case operation
@@ -202,6 +202,7 @@ module Stacker
       params = @cloud_formation_params || {}
       params[:credentials] = @credentials if @credentials
       params[:region] = @region if @region
+      parmas[:retry_limit] = 10
       @lazy_cloud_formation = Aws::CloudFormation::Client.new(params)
     end
     @lazy_cloud_formation
