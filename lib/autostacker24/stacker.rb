@@ -202,7 +202,7 @@ module Stacker
       params = @cloud_formation_params || {}
       params[:credentials] = @credentials if @credentials
       params[:region] = @region if @region
-      parmas[:retry_limit] = 10
+      params[:retry_limit] = 10
       @lazy_cloud_formation = Aws::CloudFormation::Client.new(params)
     end
     @lazy_cloud_formation
