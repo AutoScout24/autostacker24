@@ -1,3 +1,8 @@
+2.8.3 (2018-07-24)
+------------------
+* Issue - Fix typo 
+  See [related GitHub pull request #58](https://github.com/AutoScout24/autostacker24/pull/58)
+
 2.8.2 (2018-07-23)
 ------------------
 * Issue - Avoid throtteling of cfn api calls by AWS
