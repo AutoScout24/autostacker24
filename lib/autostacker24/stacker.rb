@@ -40,7 +40,7 @@ module Stacker
     if find_stack(stack_name).nil?
       create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minute, role_arns)
+      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn)
     end
   end
 
