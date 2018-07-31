@@ -83,12 +83,12 @@ case args.command
   when /create|update|create_or_update/
     check_template(args)
     check_stack(args)
-    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent, args.role_arn)
+    Stacker.create_or_update_stack(args.stack, args.template, args.params, args.parent, role_arn: args.role_arn)
   when /list/
     Stacker.list_stacks()
   when /delete/
     check_stack(args)
-    Stacker.delete_stack(args.stack, args.role_arn)
+    Stacker.delete_stack(args.stack, role_arn: args.role_arn)
   when /process/
     check_template(args)
     puts Stacker.template_body(args.template)

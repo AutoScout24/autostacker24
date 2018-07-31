@@ -36,15 +36,15 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
+      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, role_arn, tags, timeout_in_minutes)
+      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minute, role_arns)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
@@ -56,7 +56,7 @@ module Stacker
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, role_arn = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
@@ -113,7 +113,7 @@ module Stacker
     cloud_formation.validate_template(template_body: template_body(template))
   end
 
-  def delete_stack(stack_name, role_arn = nil, timeout_in_minutes = 60)
+  def delete_stack(stack_name, timeout_in_minutes = 60, role_arn = nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     cloud_formation.delete_stack(stack_name: stack_name, role_arn: role_arn)
     wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
