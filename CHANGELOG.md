@@ -1,3 +1,8 @@
+2.8.4 (2018-07-31)
+------------------
+* Issue - New parameters should be placed at the end
+  See [related GitHub pull request #59](https://github.com/AutoScout24/autostacker24/pull/59)
+
 2.8.3 (2018-07-24)
 ------------------
 * Issue - Fix typo 
