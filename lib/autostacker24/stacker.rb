@@ -36,15 +36,15 @@ module Stacker
     end
   end
 
-  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
+  def create_or_update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn: nil)
     if find_stack(stack_name).nil?
-      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn)
+      create_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn: role_arn)
     else
-      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn)
+      update_stack(stack_name, template, parameters, parent_stack_name, tags, timeout_in_minutes, role_arn: role_arn)
     end
   end
 
-  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
+  def create_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn: nil)
     merge_and_validate(template, parameters, parent_stack_name)
     cloud_formation.create_stack(stack_name:    stack_name,
                                  template_body: template_body(template),
@@ -56,7 +56,7 @@ module Stacker
     wait_for_stack(stack_name, :create, Set.new, timeout_in_minutes)
   end
 
-  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn = nil)
+  def update_stack(stack_name, template, parameters, parent_stack_name = nil, tags = nil, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn: nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     begin
       merge_and_validate(template, parameters, parent_stack_name)
