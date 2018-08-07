@@ -1,3 +1,8 @@
+2.8.6 (2018-08-07)
+------------------
+* Issue - fix named param role_arn
+  See [related GitHub pull request #63](https://github.com/AutoScout24/autostacker24/pull/63)
+
 2.8.5 (2018-07-31)
 ------------------
 * Issue - Fix typo
