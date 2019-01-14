@@ -11,12 +11,19 @@ DEFAULT_TIMEOUT = 60
 
 module Stacker
 
-  attr_reader :region, :profile
+  attr_reader :region, :credentials, :profile
 
   def profile=(profile)
     unless profile == @profile
       @lazy_cloud_formation = nil
       @profile = profile
+    end
+  end
+
+  def credentials=(credentials)
+    unless credentials == @credentials
+      @lazy_cloud_formation = nil
+      @credentials = credentials
     end
   end
 
@@ -205,6 +212,7 @@ module Stacker
     unless @lazy_cloud_formation
       params = @cloud_formation_params || {}
       params[:profile] = @profile if @profile
+      params[:credentials] = @credentials if @credentials
       params[:region] = @region if @region
       params[:retry_limit] = 10
       @lazy_cloud_formation = Aws::CloudFormation::Client.new(params)
