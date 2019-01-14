@@ -77,7 +77,7 @@ args.command = ARGV[0]
 args.params = args.params.inject({}){|m, kv| m.merge(Hash[kv[0].to_sym, kv[1]])}
 
 Stacker.region = args.region
-Stacker.credentials = Aws::SharedCredentials.new(profile_name: args.profile, path: ENV['AWS_SHARED_CREDENTIALS_FILE']) if args.profile || ENV['AWS_SHARED_CREDENTIALS_FILE']
+Stacker.profile = args.profile
 
 case args.command
   when /validate/
