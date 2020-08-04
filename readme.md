@@ -28,7 +28,7 @@ It will also wait until the stack operation is eventually finished, handling all
   - `parent_stack_name`: this special feature will read the output parameters of an existing stack and
     merge them to the given parameters. Therefore the new stack can easily reference resources
     (e.g. VPC Ids or Security Groups) from a parent stack.
-  - `tags`: Key-value pairs to associate with this stack. As CloudFormation [does not support updating tags](http://docs.aws.amazon.com/cli/latest/reference/cloudformation/update-stack.html) AutoStacker24 is injecting the tags to all  `Resources` elements which support it.
+  - `tags`: Key-value pairs to associate with this stack. As CloudFormation [does not support updating tags](http://docs.aws.amazon.com/cli/latest/reference/cloudformation/update-stack.html) AutoStacker24 is injecting the tags to all `Resources` elements which support it.
 
 Example:
 
@@ -162,7 +162,7 @@ To see the outcome after AutoStacker24 preprocessed your template as pretty prin
 $ autostacker24 show --template /path/to/template.json
 ```
 
-To see the outcome after AutoStacker24 preprocessed your template 
+To see the outcome after AutoStacker24 preprocessed your template
 
 ```
 $ autostacker24 process --template /path/to/template.json
@@ -192,3 +192,10 @@ To create or update a stack and add tags from tags file (can be json or yaml) to
 ```
 $ autostacker24 update --stack MyStack --template /path/to/template.yaml --tags /path/to/tags.json
 ```
+
+AutoStacker24 supports the usual AWS SDK environment variables like
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SHARED_CREDENTIALS_FILE
+- AWS_PROFILE
+- AWS_REGION and AWS_DEFAULT_REGION

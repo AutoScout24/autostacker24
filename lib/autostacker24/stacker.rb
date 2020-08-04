@@ -11,9 +11,15 @@ DEFAULT_TIMEOUT = 60
 
 module Stacker
 
-  attr_reader :region, :credentials
+  attr_reader :region, :credentials, :profile
 
-  # use ENV['AWS_ACCESS_KEY_ID'] and ENV['AWS_SECRET_ACCESS_KEY'] if you don't want to set credentials by code
+  def profile=(profile)
+    unless profile == @profile
+      @lazy_cloud_formation = nil
+      @profile = profile
+    end
+  end
+
   def credentials=(credentials)
     unless credentials == @credentials
       @lazy_cloud_formation = nil
@@ -21,7 +27,7 @@ module Stacker
     end
   end
 
-  def region=(region) # use ENV['AWS_REGION'] or ENV['AWS_DEFAULT_REGION']
+  def region=(region)
     unless region == @region
       @lazy_cloud_formation = nil
       @region = region
@@ -205,6 +211,7 @@ module Stacker
   def cloud_formation # lazy CloudFormation client
     unless @lazy_cloud_formation
       params = @cloud_formation_params || {}
+      params[:profile] = @profile if @profile
       params[:credentials] = @credentials if @credentials
       params[:region] = @region if @region
       params[:retry_limit] = 10
