@@ -119,7 +119,7 @@ module Stacker
     cloud_formation.validate_template(template_body: template_body(template))
   end
 
-  def delete_stack(stack_name, timeout_in_minutes = 60, role_arn = nil)
+  def delete_stack(stack_name, timeout_in_minutes = DEFAULT_TIMEOUT, role_arn: nil)
     seen_events = get_stack_events(stack_name).map {|e| e[:event_id]}
     cloud_formation.delete_stack(stack_name: stack_name, role_arn: role_arn)
     wait_for_stack(stack_name, :delete, seen_events, timeout_in_minutes)
